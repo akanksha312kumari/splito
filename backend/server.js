@@ -8,9 +8,29 @@ const { Server } = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 
+// Helper to handle CORS origins flexibly (with/without trailing slashes)
+const getAllowedOrigins = () => {
+  const origins = ['http://localhost:5173'];
+  const devUrl = 'http://localhost:4173';
+  if (process.env.FRONTEND_URL) {
+    const raw = process.env.FRONTEND_URL.replace(/\/$/, ""); // remove trailing slash
+    origins.push(raw);
+    origins.push(`${raw}/`); // allow with trailing slash too just in case
+  }
+  origins.push(devUrl);
+  return origins;
+};
+
 // Initialize Socket.io
 const io = new Server(server, {
-  cors: { origin: [process.env.FRONTEND_URL, 'http://localhost:5173'].filter(Boolean), credentials: true }
+  cors: { origin: (origin, callback) => {
+    const allowed = getAllowedOrigins();
+    if (!origin || allowed.includes(origin) || allowed.includes(origin.replace(/\/$/, ""))) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }, credentials: true }
 });
 
 const jwt = require('jsonwebtoken');
@@ -46,7 +66,14 @@ app.use((req, res, next) => {
 });
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
-app.use(cors({ origin: [process.env.FRONTEND_URL, 'http://localhost:5173'].filter(Boolean), credentials: true }));
+app.use(cors({ origin: (origin, callback) => {
+  const allowed = getAllowedOrigins();
+  if (!origin || allowed.includes(origin) || allowed.includes(origin.replace(/\/$/, ""))) {
+    callback(null, true);
+  } else {
+    callback(new Error('Not allowed by CORS'));
+  }
+}, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
