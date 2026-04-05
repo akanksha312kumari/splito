@@ -1,3 +1,4 @@
+const API_URL = "https://splito-nghk.onrender.com";
 /**
  * Splito — Main App Logic (SPA)
  * Handles routing, rendering, state, and UI interactions.
@@ -7,8 +8,8 @@
    STATE
 ════════════════════════════════════════════════════════════════════════════ */
 const State = {
-  user:         null,
-  groups:       [],
+  user: null,
+  groups: [],
   currentGroup: null,
   chartInstances: {},
 };
@@ -21,7 +22,7 @@ const fmt = (n) => '₹' + parseFloat(n || 0).toLocaleString('en-IN', { maximumF
 function timeAgo(iso) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1)  return 'just now';
+  if (m < 1) return 'just now';
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
@@ -41,7 +42,7 @@ function categoryEmoji(cat) {
 function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.className   = `toast ${type}`;
+  t.className = `toast ${type}`;
   t.classList.remove('hidden');
   clearTimeout(t._timer);
   t._timer = setTimeout(() => t.classList.add('hidden'), 3000);
@@ -66,10 +67,10 @@ function showView(viewId) {
 
   // Lazy load
   if (viewId === 'dashboard') loadDashboard();
-  if (viewId === 'groups')    loadGroups();
-  if (viewId === 'expenses')  loadAllExpenses();
+  if (viewId === 'groups') loadGroups();
+  if (viewId === 'expenses') loadAllExpenses();
   if (viewId === 'analytics') loadAnalytics();
-  if (viewId === 'insights')  loadInsights();
+  if (viewId === 'insights') loadInsights();
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -114,12 +115,12 @@ async function loadDashboard() {
     ]);
 
     State.groups = groupsRes.groups || [];
-    const stats  = insightsRes.personal_stats || {};
+    const stats = insightsRes.personal_stats || {};
 
     // Stat cards
-    document.getElementById('stat-owed').textContent   = fmt(stats.total_owed_to_me);
-    document.getElementById('stat-iowe').textContent   = fmt(stats.total_i_owe);
-    document.getElementById('stat-paid').textContent   = fmt(stats.total_paid_30d);
+    document.getElementById('stat-owed').textContent = fmt(stats.total_owed_to_me);
+    document.getElementById('stat-iowe').textContent = fmt(stats.total_i_owe);
+    document.getElementById('stat-paid').textContent = fmt(stats.total_paid_30d);
     document.getElementById('stat-groups').textContent = stats.active_groups || 0;
 
     // AI banner (first high-priority insight)
@@ -161,9 +162,9 @@ function renderDashboardGroups(groups) {
   if (!groups.length) { el.innerHTML = '<div class="empty-state">No groups yet.</div>'; return; }
 
   el.innerHTML = groups.map(g => {
-    const bal     = g.my_balance || 0;
-    const balCls  = bal > 0 ? 'positive' : bal < 0 ? 'negative' : 'zero';
-    const balTxt  = bal > 0 ? `+${fmt(bal)}` : bal < 0 ? fmt(bal) : '✓ Settled';
+    const bal = g.my_balance || 0;
+    const balCls = bal > 0 ? 'positive' : bal < 0 ? 'negative' : 'zero';
+    const balTxt = bal > 0 ? `+${fmt(bal)}` : bal < 0 ? fmt(bal) : '✓ Settled';
     return `
       <div class="group-mini-item" onclick="openGroupDetail('${g.id}')">
         <div class="group-mini-icon">${g.icon}</div>
@@ -185,7 +186,7 @@ async function loadGroups() {
   grid.innerHTML = '<div class="empty-state card skeleton" style="height:120px"></div>'.repeat(3);
 
   try {
-    const res  = await GroupsAPI.list();
+    const res = await GroupsAPI.list();
     State.groups = res.groups || [];
     renderGroupsGrid(State.groups);
   } catch (e) {
@@ -206,7 +207,7 @@ function renderGroupsGrid(groups) {
   }
 
   grid.innerHTML = groups.map(g => {
-    const bal    = g.my_balance || 0;
+    const bal = g.my_balance || 0;
     const balCls = bal > 0 ? 'positive' : bal < 0 ? 'negative' : 'zero';
     const balTxt = bal > 0 ? `You're owed ${fmt(bal)}` : bal < 0 ? `You owe ${fmt(Math.abs(bal))}` : 'All settled ✓';
     return `
@@ -244,7 +245,7 @@ async function openGroupDetail(groupId) {
 }
 
 function renderGroupDetail(res, balRes) {
-  const g       = res.group;
+  const g = res.group;
   const members = res.members || [];
   const expenses = res.recent_expenses || [];
   const balances = balRes.balances || [];
@@ -279,9 +280,9 @@ function renderGroupDetail(res, balRes) {
         <div class="balances-section">
           <h3>💰 Balances</h3>
           ${balances.map(b => {
-            const cls = b.balance > 0 ? 'pos' : b.balance < 0 ? 'neg' : 'zero';
-            const txt = b.balance > 0 ? `+${fmt(b.balance)}` : b.balance < 0 ? fmt(b.balance) : 'Settled';
-            return `
+    const cls = b.balance > 0 ? 'pos' : b.balance < 0 ? 'neg' : 'zero';
+    const txt = b.balance > 0 ? `+${fmt(b.balance)}` : b.balance < 0 ? fmt(b.balance) : 'Settled';
+    return `
               <div class="balance-row">
                 <div class="balance-user">
                   <div class="avatar" style="background:${_randColor(b.user_id)}">${initials(b.username)}</div>
@@ -290,7 +291,7 @@ function renderGroupDetail(res, balRes) {
                 <span class="balance-amount ${cls}">${txt}</span>
               </div>
             `;
-          }).join('') || '<div style="color:var(--text-3);font-size:13px">No balance data</div>'}
+  }).join('') || '<div style="color:var(--text-3);font-size:13px">No balance data</div>'}
         </div>
 
         ${suggested.length ? `
@@ -334,7 +335,7 @@ function renderGroupDetail(res, balRes) {
 }
 
 function _randColor(seed = '') {
-  const colors = ['#6366f1','#ec4899','#14b8a6','#f59e0b','#8b5cf6','#ef4444','#10b981','#3b82f6'];
+  const colors = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#ef4444', '#10b981', '#3b82f6'];
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = seed.charCodeAt(i) + ((h << 5) - h);
   return colors[Math.abs(h) % colors.length];
@@ -439,8 +440,8 @@ function _destroyChart(id) {
 }
 
 const CHART_COLORS = [
-  '#b8ff3c','#4f6ef7','#f7547e','#2dd4bf','#fbbf24',
-  '#8b5cf6','#f97316','#06b6d4','#10b981','#ec4899'
+  '#b8ff3c', '#4f6ef7', '#f7547e', '#2dd4bf', '#fbbf24',
+  '#8b5cf6', '#f97316', '#06b6d4', '#10b981', '#ec4899'
 ];
 
 function renderCategoryChart(cats) {
@@ -489,14 +490,14 @@ function renderTrendChart(weekly) {
       plugins: { legend: { display: false } },
       scales: {
         x: { ticks: { color: '#8892b0', font: { size: 11 } }, grid: { color: '#232840' } },
-        y: { ticks: { color: '#8892b0', font: { size: 11 }, callback: v => '₹'+v.toLocaleString('en-IN') }, grid: { color: '#232840' } }
+        y: { ticks: { color: '#8892b0', font: { size: 11 }, callback: v => '₹' + v.toLocaleString('en-IN') }, grid: { color: '#232840' } }
       }
     }
   });
 }
 
 function renderCategoryBars(cats) {
-  const el  = document.getElementById('cat-breakdown-list');
+  const el = document.getElementById('cat-breakdown-list');
   const max = Math.max(...cats.map(c => c.amount), 1);
   el.innerHTML = cats.map((c, i) => `
     <div class="cat-bar-item">
@@ -505,7 +506,7 @@ function renderCategoryBars(cats) {
         <span class="cat-bar-amount">${fmt(c.amount)} (${c.percentage}%)</span>
       </div>
       <div class="cat-bar-track">
-        <div class="cat-bar-fill" style="width:${(c.amount/max*100).toFixed(1)}%;background:${CHART_COLORS[i % CHART_COLORS.length]}"></div>
+        <div class="cat-bar-fill" style="width:${(c.amount / max * 100).toFixed(1)}%;background:${CHART_COLORS[i % CHART_COLORS.length]}"></div>
       </div>
     </div>
   `).join('');
@@ -538,11 +539,11 @@ function renderInsights(insights, container) {
   }
 
   container.innerHTML = insights.map((ins, i) => `
-    <div class="insight-card ${ins.priority}" style="animation-delay:${i*0.07}s">
+    <div class="insight-card ${ins.priority}" style="animation-delay:${i * 0.07}s">
       <div class="insight-header">
         <div class="insight-icon">${ins.icon}</div>
         <div class="insight-meta">
-          <div class="insight-type">${ins.type.replace(/_/g,' ')}</div>
+          <div class="insight-type">${ins.type.replace(/_/g, ' ')}</div>
           <div class="insight-title">${ins.title}</div>
         </div>
       </div>
@@ -610,7 +611,7 @@ function toggleParticipant(uid) {
 function updateCustomSplits() {
   if (_splitType !== 'unequal') return;
   const amount = parseFloat(document.getElementById('ae-amount').value) || 0;
-  const per    = _selectedParticipants.size ? (amount / _selectedParticipants.size) : 0;
+  const per = _selectedParticipants.size ? (amount / _selectedParticipants.size) : 0;
 
   const list = document.getElementById('custom-splits-list');
   list.innerHTML = [..._selectedParticipants].map(uid => {
@@ -628,7 +629,7 @@ function updateCustomSplits() {
 }
 
 function recalcRemaining() {
-  const total  = parseFloat(document.getElementById('ae-amount').value) || 0;
+  const total = parseFloat(document.getElementById('ae-amount').value) || 0;
   const inputs = document.querySelectorAll('.custom-split-input');
   const assigned = [...inputs].reduce((s, i) => s + (parseFloat(i.value) || 0), 0);
   const rem = total - assigned;
@@ -642,7 +643,7 @@ function recalcRemaining() {
 /* ════════════════════════════════════════════════════════════════════════════
    MODAL HELPERS
 ════════════════════════════════════════════════════════════════════════════ */
-function openModal(id)  { document.getElementById(id).classList.remove('hidden'); }
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 function closeAllModals() {
   document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
@@ -657,7 +658,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
   errEl.textContent = '';
   try {
     const res = await AuthAPI.login({
-      email:    document.getElementById('login-email').value,
+      email: document.getElementById('login-email').value,
       password: document.getElementById('login-password').value,
     });
     Auth.setToken(res.token);
@@ -675,7 +676,7 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
   try {
     const res = await AuthAPI.register({
       username: document.getElementById('reg-name').value,
-      email:    document.getElementById('reg-email').value,
+      email: document.getElementById('reg-email').value,
       password: document.getElementById('reg-password').value,
     });
     Auth.setToken(res.token);
@@ -733,14 +734,14 @@ document.getElementById('add-expense-form').addEventListener('submit', async (e)
 
   try {
     await ExpensesAPI.add({
-      group_id:      document.getElementById('ae-group').value,
-      title:         document.getElementById('ae-title').value,
-      amount:        document.getElementById('ae-amount').value,
-      category:      document.getElementById('ae-category').value,
-      split_type:    _splitType,
+      group_id: document.getElementById('ae-group').value,
+      title: document.getElementById('ae-title').value,
+      amount: document.getElementById('ae-amount').value,
+      category: document.getElementById('ae-category').value,
+      split_type: _splitType,
       participants,
       custom_splits: _splitType === 'unequal' ? customSplits : {},
-      notes:         document.getElementById('ae-notes').value,
+      notes: document.getElementById('ae-notes').value,
     });
     closeAllModals();
     showToast('Expense added! 💸');
@@ -813,7 +814,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Icon picker
   const iconPickerEl = document.getElementById('icon-picker');
-  const iconInput    = document.getElementById('cg-icon');
+  const iconInput = document.getElementById('cg-icon');
   iconPickerEl.innerHTML = iconPickerEl.textContent.trim().split(' ').map(icon =>
     `<span class="icon-option${icon === '🏠' ? ' selected' : ''}">${icon}</span>`
   ).join('');
