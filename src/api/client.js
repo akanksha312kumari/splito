@@ -1,5 +1,5 @@
 // Central API client — attaches JWT automatically and handles 401 auto-logout
-const BASE = '/api';
+const BASE = import.meta.env.VITE_API_URL || '/api';
 
 let _onUnauthorized = null;
 export function setUnauthorizedHandler(fn) { _onUnauthorized = fn; }

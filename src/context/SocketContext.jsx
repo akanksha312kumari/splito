@@ -15,7 +15,8 @@ export function SocketProvider({ children }) {
     
     // Only connect if there's a token and a user
     if (token && user) {
-      const newSocket = io('/', {
+      const url = import.meta.env.VITE_SOCKET_URL || '/';
+      const newSocket = io(url, {
         auth: { token },
         transports: ['websocket'],
       });
