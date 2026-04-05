@@ -1,8 +1,8 @@
-const express    = require('express');
-const cors       = require('cors');
-const path       = require('path');
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
 
-const http       = require('http');
+const http = require('http');
 const { Server } = require('socket.io');
 
 const app = express();
@@ -23,14 +23,16 @@ const getAllowedOrigins = () => {
 
 // Initialize Socket.io
 const io = new Server(server, {
-  cors: { origin: (origin, callback) => {
-    const allowed = getAllowedOrigins();
-    if (!origin || allowed.includes(origin) || allowed.includes(origin.replace(/\/$/, ""))) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  }, credentials: true }
+  cors: {
+    origin: (origin, callback) => {
+      const allowed = getAllowedOrigins();
+      if (!origin || allowed.includes(origin) || allowed.includes(origin.replace(/\/$/, ""))) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    }, credentials: true
+  }
 });
 
 const jwt = require('jsonwebtoken');
@@ -53,7 +55,7 @@ io.on('connection', (socket) => {
   console.log('🔗 User connected via socket:', socket.userId);
   // User joins their own personal room to receive targeted events
   socket.join(`user_${socket.userId}`);
-  
+
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.userId);
   });
@@ -66,29 +68,25 @@ app.use((req, res, next) => {
 });
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
-app.use(cors({ origin: (origin, callback) => {
-  const allowed = getAllowedOrigins();
-  if (!origin || allowed.includes(origin) || allowed.includes(origin.replace(/\/$/, ""))) {
-    callback(null, true);
-  } else {
-    callback(new Error('Not allowed by CORS'));
-  }
-}, credentials: true }));
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
-app.use('/api/auth',          require('./routes/auth'));
-app.use('/api/groups',        require('./routes/groups'));
-app.use('/api/expenses',      require('./routes/expenses'));
-app.use('/api/settlements',   require('./routes/settlements'));
-app.use('/api/insights',      require('./routes/insights'));
-app.use('/api/ai',            require('./routes/ai'));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/groups', require('./routes/groups'));
+app.use('/api/expenses', require('./routes/expenses'));
+app.use('/api/settlements', require('./routes/settlements'));
+app.use('/api/insights', require('./routes/insights'));
+app.use('/api/ai', require('./routes/ai'));
 app.use('/api/notifications', require('./routes/notifications'));
-app.use('/api/profile',       require('./routes/profile'));
-app.use('/api/receipts',      require('./routes/receipts'));
-app.use('/api/settings',      require('./routes/settings'));
+app.use('/api/profile', require('./routes/profile'));
+app.use('/api/receipts', require('./routes/receipts'));
+app.use('/api/settings', require('./routes/settings'));
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
