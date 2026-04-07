@@ -7,10 +7,10 @@ const ICONS    = { success: CheckCircle2, error: XCircle, info: Info };
 const BG_MAP   = {
   success: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(6,182,212,0.06))',
   error:   'linear-gradient(135deg, rgba(239,68,68,0.1),  rgba(249,115,22,0.06))',
-  info:    'linear-gradient(135deg, rgba(91,94,244,0.08), rgba(155,62,247,0.06))',
+  info:    'linear-gradient(135deg, rgba(232,164,0,0.10), rgba(240,124,58,0.07))',
 };
 const CLR_MAP  = { success: 'var(--success)', error: 'var(--error)', info: 'var(--primary)' };
-const BORDER   = { success: 'rgba(16,185,129,0.25)', error: 'rgba(239,68,68,0.25)', info: 'rgba(91,94,244,0.2)' };
+const BORDER   = { success: 'rgba(16,185,129,0.25)', error: 'rgba(239,68,68,0.25)', info: 'rgba(232,164,0,0.30)' };
 
 let nextId = 0;
 

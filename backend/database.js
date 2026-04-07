@@ -14,7 +14,7 @@ db.exec(`PRAGMA foreign_keys = ON`);
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL, avatar TEXT DEFAULT NULL,
+    password TEXT NOT NULL, avatar TEXT DEFAULT NULL, phone TEXT DEFAULT NULL,
     xp INTEGER DEFAULT 0, level INTEGER DEFAULT 1,
     created_at TEXT DEFAULT (datetime('now'))
   );
@@ -88,7 +88,18 @@ db.exec(`
     payment_method TEXT DEFAULT 'UPI',
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
+  CREATE TABLE IF NOT EXISTS messages (
+    id TEXT PRIMARY KEY, group_id TEXT NOT NULL, user_id TEXT NOT NULL,
+    text TEXT, attachment_url TEXT, expense_id TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id)  REFERENCES users(id),
+    FOREIGN KEY (expense_id) REFERENCES expenses(id)
+  );
 `);
+
+// Apply migrations for existing db silently
+try { db.exec(`ALTER TABLE users ADD COLUMN phone TEXT DEFAULT NULL;`); } catch(e) {}
 
 // ─── INDEXES ──────────────────────────────────────────────────────────────────
 db.exec(`
@@ -109,6 +120,7 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_notif_user_read           ON notifications(user_id, is_read);
   CREATE INDEX IF NOT EXISTS idx_badges_user               ON badges(user_id);
   CREATE INDEX IF NOT EXISTS idx_receipts_user             ON receipts(user_id);
+  CREATE INDEX IF NOT EXISTS idx_messages_group            ON messages(group_id);
 `);
 
 // ─── SEED ─────────────────────────────────────────────────────────────────────

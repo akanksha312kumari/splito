@@ -33,33 +33,47 @@ function Toggle({ id, checked, onChange, label }) {
   );
 }
 
-/* ── Edit Name Modal ── */
-function EditNameModal({ currentName, onSave, onClose }) {
+/* ── Edit Profile Modal ── */
+function EditProfileModal({ currentName, currentPhone, onSave, onClose }) {
   const [name, setName] = useState(currentName || '');
-  const inputRef = useRef(null);
+  const [phone, setPhone] = useState(currentPhone || '');
 
   const submit = () => {
     if (name.trim().length < 2) return;
-    onSave(name.trim());
+    onSave(name.trim(), phone.trim());
   };
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
       <div className="card animate-fade-up" style={{ width: '100%', maxWidth: 440, padding: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h3>Edit Display Name</h3>
+          <h3>Edit Profile</h3>
           <button className="btn btn-ghost btn-icon" onClick={onClose}><X size={20} /></button>
         </div>
-        <input
-          ref={inputRef}
-          autoFocus
-          type="text"
-          placeholder="Your name"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && submit()}
-          style={{ marginBottom: '1.25rem' }}
-        />
+        <div style={{ marginBottom: '1.25rem' }}>
+          <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--on-surface-muted)', marginBottom: '6px' }}>Display Name</label>
+          <input
+            autoFocus
+            type="text"
+            className="input"
+            placeholder="Your name"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            style={{ width: '100%' }}
+          />
+        </div>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--on-surface-muted)', marginBottom: '6px' }}>Phone Number (Optional)</label>
+          <input
+            type="tel"
+            className="input"
+            placeholder="e.g. +91 9876543210"
+            value={phone}
+            onChange={e => setPhone(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && submit()}
+            style={{ width: '100%' }}
+          />
+        </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <button className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
           <button className="btn btn-primary" style={{ flex: 1 }} onClick={submit} disabled={name.trim().length < 2}>
@@ -139,19 +153,39 @@ export default function Profile() {
     }
   };
 
-  /* ── Save name ── */
-  const handleSaveName = async (newName) => {
+  /* ── Save Profile ── */
+  const handleSaveProfile = async (newName, newPhone) => {
     setSavingName(true);
     try {
-      await api.put('/profile', { name: newName });
+      await api.put('/profile', { name: newName, phone: newPhone });
       await refreshUser();
       await refetch();
       toast.success('Profile updated');
       setEditingName(false);
     } catch (e) {
-      toast.error(e.message || 'Could not update name');
+      toast.error(e.message || 'Could not update profile');
     } finally {
       setSavingName(false);
+    }
+  };
+
+  /* ── Avatar Upload ── */
+  const fileRef = useRef(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const handleAvatarUpload = async (file) => {
+    if (!file) return;
+    setUploadingAvatar(true);
+    try {
+      const form = new FormData();
+      form.append('avatar', file);
+      await api.upload('/profile/avatar', form);
+      await refreshUser();
+      await refetch();
+      toast.success('Profile photo updated');
+    } catch (e) {
+      toast.error(e.message || 'Avatar upload failed');
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -202,11 +236,12 @@ export default function Profile() {
   return (
     <div className="page animate-fade-up">
 
-      {/* ── Edit Name Modal ── */}
+      {/* ── Edit Profile Modal ── */}
       {editingName && (
-        <EditNameModal
-          currentName={user?.name}
-          onSave={handleSaveName}
+        <EditProfileModal
+          currentName={profile?.name || user?.name}
+          currentPhone={profile?.phone || ''}
+          onSave={handleSaveProfile}
           onClose={() => setEditingName(false)}
         />
       )}
@@ -272,7 +307,7 @@ export default function Profile() {
               <button
                 key={m}
                 onClick={() => { setSetting('payment_method', m); toast.success(`Default payment set to ${m}`); setActiveDrawer(null); }}
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: settings.payment_method === m ? 'rgba(91,94,244,0.08)' : 'var(--surface-low)', border: `1.5px solid ${settings.payment_method === m ? 'var(--primary)' : 'transparent'}`, borderRadius: 'var(--radius-md)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 }}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: settings.payment_method === m ? 'rgba(232,164,0,0.10)' : 'var(--surface-low)', border: `1.5px solid ${settings.payment_method === m ? 'var(--primary)' : 'transparent'}`, borderRadius: 'var(--radius-md)', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 }}
               >
                 <span>{m}</span>
                 {settings.payment_method === m && <Check size={18} color="var(--primary)" />}
@@ -344,30 +379,44 @@ export default function Profile() {
       ) : (
         <>
           {/* ── User card ── */}
-          <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1.5rem', padding: '2rem', background: 'linear-gradient(135deg, rgba(91,94,244,0.05), rgba(155,62,247,0.04))' }}>
+          <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1.5rem', padding: '2rem', background: 'linear-gradient(135deg, rgba(232,164,0,0.07), rgba(240,124,58,0.05))' }}>
             <div
               className="avatar avatar-xl"
-              style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))', boxShadow: '0 8px 28px rgba(91,94,244,0.35)', flexShrink: 0 }}
+              style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))', boxShadow: '0 8px 28px rgba(232,164,0,0.30)', flexShrink: 0, position: 'relative', cursor: 'pointer', overflow: 'hidden' }}
+              onClick={() => fileRef.current?.click()}
+              title="Change Profile Photo"
             >
-              {(user?.name?.[0] || 'A').toUpperCase()}
+              {profile?.avatar ? (
+                <img src={profile.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                (profile?.name?.[0] || user?.name?.[0] || 'A').toUpperCase()
+              )}
+              {uploadingAvatar && (
+                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 16, height: 16, border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                </div>
+              )}
             </div>
+            <input type="file" ref={fileRef} accept="image/*" style={{ display: 'none' }} onChange={e => handleAvatarUpload(e.target.files?.[0])} />
+            
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '4px' }}>
                 <h2 style={{ fontSize: '1.375rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {user?.name || 'User'}
+                  {profile?.name || user?.name || 'User'}
                 </h2>
                 <button
-                  id="edit-name-btn"
+                  id="edit-profile-btn"
                   className="btn btn-ghost"
                   style={{ padding: '4px 8px', borderRadius: 8, flexShrink: 0 }}
                   onClick={() => setEditingName(true)}
-                  title="Edit name"
+                  title="Edit profile"
                 >
                   <Edit2 size={14} />
                 </button>
                 {savingName && <span style={{ fontSize: '0.75rem', color: 'var(--primary)' }}>Saving…</span>}
               </div>
-              <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</p>
+              <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: profile?.phone ? '2px' : '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile?.email || user?.email}</p>
+              {profile?.phone && <p className="text-muted" style={{ fontSize: '0.8125rem', marginBottom: '0.75rem', fontWeight: 500 }}>📱 {profile.phone}</p>}
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <span className="badge badge-primary">Level {profile?.level ?? 1} Splitter</span>
                 <span className="badge badge-success">{profile?.badges?.filter(b => b.earned).length ?? 0} Badges</span>

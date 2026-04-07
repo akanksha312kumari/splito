@@ -56,6 +56,14 @@ io.on('connection', (socket) => {
   // User joins their own personal room to receive targeted events
   socket.join(`user_${socket.userId}`);
 
+  socket.on('join_group', (groupId) => {
+    socket.join(`group_${groupId}`);
+  });
+
+  socket.on('leave_group', (groupId) => {
+    socket.leave(`group_${groupId}`);
+  });
+
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.userId);
   });

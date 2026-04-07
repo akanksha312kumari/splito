@@ -8,8 +8,7 @@ import { useToast } from '../context/ToastContext';
 import Skeleton from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import ErrorState from '../components/ErrorState';
-
-const METHODS = ['UPI', 'Google Pay', 'PhonePe', 'Cash', 'Bank Transfer'];
+import PaymentModal from '../components/PaymentModal';
 
 export default function Settlement() {
   const navigate          = useNavigate();
@@ -22,48 +21,48 @@ export default function Settlement() {
   const { data: pending,  refetch: refetchPending }  = useApi(`/settlements?group_id=${groupId}&status=pending`, [], 'balance_update');
   const { data: history }  = useApi(`/settlements?group_id=${groupId}&status=paid`, [], 'balance_update');
 
-  const [method,  setMethod]  = useState('UPI');
   const [paying,  setPaying]  = useState(null);
+  const [modalConfig, setModalConfig] = useState(null);
 
-  const pay = async (s) => {
-    if (!s?.id) return;
-    setPaying(s.id);
-    try {
-      await api.put(`/settlements/${s.id}/pay`, {});
-      await refetchPending();
-      await refetchSug();
-      await refreshUser();          // update XP in sidebar
-      toast.success(`Payment of ₹${s.amount.toLocaleString('en-IN')} marked ✓  You earned +50 XP!`);
-    } catch (e) {
-      toast.error(e.message || 'Payment failed');
-    } finally {
-      setPaying(null);
-    }
-  };
+  const handlePaymentComplete = async ({ method, details }) => {
+    if (!modalConfig) return;
+    const { type, data } = modalConfig;
+    const finalMethod = details ? `${method} (${details})` : method;
 
-  const createAndPay = async (s) => {
-    if (!s || !s.to_user || !s.amount) return;
-    setPaying('new-paid');
-    try {
-      // 1. Create the pending request matching exactly what the AI suggested
-      const created = await api.post('/settlements', {
-        group_id: groupId,
-        from_user: s.from_user,
-        to_user: s.to_user,
-        amount: s.amount,
-        method
-      });
-      // 2. Mark as immediately paid
-      await api.put(`/settlements/${created.id}/pay`, {});
-      
-      await refetchPending();
-      await refetchSug();
-      await refreshUser();
-      toast.success(`Record updated: ₹${s.amount.toLocaleString('en-IN')} paid via ${method} ✓`);
-    } catch (e) {
-      toast.error(e.message || 'Payment action failed');
-    } finally {
-      setPaying(null);
+    if (type === 'createAndPay') {
+      setPaying('new-paid');
+      try {
+        const created = await api.post('/settlements', {
+          group_id: groupId,
+          from_user: data.from_user,
+          to_user: data.to_user,
+          amount: data.amount,
+          method: finalMethod
+        });
+        await api.put(`/settlements/${created.id}/pay`, {});
+        await refetchPending();
+        await refetchSug();
+        await refreshUser();
+        toast.success(`Payment sent via ${method} ✓`);
+      } catch (e) {
+        toast.error(e.message || 'Payment action failed');
+      } finally {
+        setPaying(null);
+      }
+    } else if (type === 'payPending') {
+      setPaying(data.id);
+      try {
+        // Here we just mark as paid since they used the actual simulated payment flow
+        await api.put(`/settlements/${data.id}/pay`, {});
+        await refetchPending();
+        await refetchSug();
+        await refreshUser();
+        toast.success(`Payment marked ✓`);
+      } catch (e) {
+        toast.error(e.message || 'Payment failed');
+      } finally {
+        setPaying(null);
+      }
     }
   };
 
@@ -76,7 +75,7 @@ export default function Settlement() {
         from_user: s.from_user,
         to_user: s.to_user,
         amount: s.amount,
-        method
+        method: 'Requested directly'
       });
       
       await refetchPending();
@@ -115,7 +114,7 @@ export default function Settlement() {
 
       {/* AI Optimal Settlement */}
       {!sugLoading && targetSuggestion && (
-        <div style={{ borderRadius: 'var(--radius-xl)', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', padding: '2rem', color: 'white', marginBottom: '2rem', boxShadow: '0 12px 40px rgba(91,94,244,0.4)' }}>
+        <div style={{ borderRadius: 'var(--radius-xl)', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', padding: '2rem', color: 'white', marginBottom: '2rem', boxShadow: '0 12px 40px rgba(232,164,0,0.35)' }}>
           <p style={{ opacity: 0.85, fontSize: '0.8125rem', marginBottom: '1.25rem' }}>✨ AI Optimal Settlement</p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
             <div style={{ textAlign: 'center' }}>
@@ -134,22 +133,26 @@ export default function Settlement() {
             </div>
           </div>
 
-          {/* Method picker */}
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.25rem', justifyContent: 'center' }}>
-            {METHODS.map(m => (
-              <button key={m} onClick={() => setMethod(m)} style={{ padding: '6px 14px', borderRadius: 999, border: '1.5px solid', borderColor: method === m ? 'white' : 'rgba(255,255,255,0.3)', background: method === m ? 'white' : 'transparent', color: method === m ? 'var(--primary)' : 'white', fontWeight: 600, fontSize: '0.8125rem', cursor: 'pointer', fontFamily: 'inherit', transition: 'all var(--transition)' }}>
-                {m}
-              </button>
-            ))}
-          </div>
-          
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '1rem' }}>
-            <button className="btn" style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }} onClick={() => initiatePayment(targetSuggestion)} disabled={paying === 'new-pending' || paying === 'new-paid'}>
-              {paying === 'new-pending' ? 'Sending...' : 'Send Request'}
-            </button>
-            <button className="btn btn-primary" style={{ background: 'white', color: 'var(--primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }} onClick={() => createAndPay(targetSuggestion)} disabled={paying === 'new-pending' || paying === 'new-paid'}>
-              {paying === 'new-paid' ? 'Processing...' : <><CheckCircle2 size={16} /> Mark as Paid</>}
-            </button>
+            {targetSuggestion.from_user === user?.id ? (
+              <button 
+                className="btn btn-primary" 
+                style={{ background: 'white', color: 'var(--primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', width: '100%', maxWidth: 200 }} 
+                onClick={() => setModalConfig({ type: 'createAndPay', data: targetSuggestion, amount: targetSuggestion.amount, payee: targetSuggestion.to_name })} 
+                disabled={paying === 'new-paid'}
+              >
+                {paying === 'new-paid' ? 'Processing...' : 'Pay Now'}
+              </button>
+            ) : (
+              <button 
+                className="btn" 
+                style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', width: '100%', maxWidth: 200 }} 
+                onClick={() => initiatePayment(targetSuggestion)} 
+                disabled={paying === 'new-pending'}
+              >
+                {paying === 'new-pending' ? 'Sending...' : 'Request Payment'}
+              </button>
+            )}
           </div>
           <p style={{ textAlign: 'center', opacity: 0.7, fontSize: '0.8125rem', marginBottom: '0.5rem' }}>
             This clears {suggestions.length} balance{suggestions.length !== 1 ? 's' : ''} in the group optimally.
@@ -175,8 +178,8 @@ export default function Settlement() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <span style={{ fontWeight: 700, color: 'var(--error)' }}>₹{s.amount.toLocaleString('en-IN')}</span>
-                  <button className="btn btn-primary btn-sm" onClick={() => pay(s)} disabled={paying === s.id}>
-                    {paying === s.id ? '…' : <><CheckCircle2 size={14} /> Pay</>}
+                  <button className="btn btn-primary btn-sm" onClick={() => s.from_user === user?.id ? setModalConfig({ type: 'payPending', data: s, amount: s.amount, payee: s.to_name }) : initiatePayment(s)} disabled={paying === s.id}>
+                    {paying === s.id ? '…' : s.from_user === user?.id ? 'Pay Now' : 'Reminder'}
                   </button>
                 </div>
               </div>
@@ -207,6 +210,14 @@ export default function Settlement() {
           </div>
         </div>
       )}
+
+      <PaymentModal 
+        isOpen={!!modalConfig}
+        onClose={() => setModalConfig(null)}
+        amount={modalConfig?.amount || 0}
+        payeeName={modalConfig?.payee || 'User'}
+        onComplete={handlePaymentComplete}
+      />
     </div>
   );
 }

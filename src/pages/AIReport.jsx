@@ -30,7 +30,7 @@ export default function AIReport() {
       {rError && <ErrorState message={rError} onRetry={refetch} />}
 
       {/* Score ring */}
-      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '2rem', background: 'linear-gradient(135deg, rgba(91,94,244,0.04), rgba(155,62,247,0.03))', flexWrap: 'wrap' }}>
+      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '2rem', background: 'linear-gradient(135deg, rgba(232,164,0,0.06), rgba(240,124,58,0.04))', flexWrap: 'wrap' }}>
         {rLoading ? <Skeleton width={128} height={128} radius="50%" /> : (
           <div style={{ position: 'relative', width: 128, height: 128, flexShrink: 0 }}>
             <svg width={128} height={128} viewBox="0 0 128 128">

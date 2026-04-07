@@ -22,7 +22,15 @@ function ProtectedLayout() {
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column', gap: '1rem' }}>
-        <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg,var(--primary),var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 900, fontSize: '1.5rem' }}>S</div>
+        <div style={{ width: 52, height: 52, borderRadius: 16, background: 'linear-gradient(135deg,#e8a400,#f07c3a)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 8px 24px rgba(232,164,0,0.35)' }}>
+          <svg width="32" height="32" viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="14" r="11" fill="white" fillOpacity="0.9"/>
+            <path d="M10 16 Q14 20 18 16" stroke="#e8a400" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+            <circle cx="11" cy="12.5" r="1.2" fill="#e8a400"/>
+            <circle cx="17" cy="12.5" r="1.2" fill="#e8a400"/>
+            <line x1="14" y1="4" x2="14" y2="24" stroke="#f07c3a" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="2 2"/>
+          </svg>
+        </div>
         <p style={{ color: 'var(--on-surface-muted)', fontSize: '0.9rem' }}>Loading Splito…</p>
       </div>
     );

@@ -22,8 +22,21 @@ export default function Sidebar() {
     <aside className="sidebar">
       {/* Logo */}
       <div className="sidebar-logo">
-        <div className="sidebar-logo-icon">S</div>
-        <span className="sidebar-logo-text gradient-text">Splito</span>
+        <div className="sidebar-logo-icon">
+          {/* Cute coin-split SVG logo */}
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* Coin body */}
+            <circle cx="14" cy="14" r="11" fill="white" fillOpacity="0.9"/>
+            {/* Smile arc */}
+            <path d="M10 16 Q14 20 18 16" stroke="#e8a400" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+            {/* Eyes */}
+            <circle cx="11" cy="12.5" r="1.2" fill="#e8a400"/>
+            <circle cx="17" cy="12.5" r="1.2" fill="#e8a400"/>
+            {/* Split line */}
+            <line x1="14" y1="4" x2="14" y2="24" stroke="#f07c3a" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="2 2"/>
+          </svg>
+        </div>
+        <span className="sidebar-logo-text" style={{ background: 'linear-gradient(135deg, #e8a400, #f07c3a)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Splito</span>
       </div>
 
       {/* Nav */}

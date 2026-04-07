@@ -3,6 +3,14 @@ const router  = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const db   = require('../database');
 const auth = require('../middleware/auth');
+const multer  = require('multer');
+const path    = require('path');
+
+const storage = multer.diskStorage({
+  destination: path.join(__dirname, '../uploads'),
+  filename: (req, file, cb) => cb(null, `chat_${uuidv4()}${path.extname(file.originalname)}`),
+});
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 
 // Helpers
 function getGroup(id) {
@@ -116,6 +124,24 @@ router.delete('/:id/members/:userId', auth, (req, res) => {
   res.json({ message: 'Member removed' });
 });
 
+// PUT /api/groups/:id/members/:userId/role
+router.put('/:id/members/:userId/role', auth, (req, res) => {
+  const group = getGroup(req.params.id);
+  if (!group) return res.status(404).json({ error: 'Group not found' });
+  
+  // Only admin or group creator can change roles
+  const currentUserRole = db.prepare('SELECT role FROM group_members WHERE group_id=? AND user_id=?').get(group.id, req.userId)?.role;
+  if (group.created_by !== req.userId && currentUserRole !== 'admin') {
+    return res.status(403).json({ error: 'Only admins can change roles' });
+  }
+
+  const { role } = req.body;
+  if (!['admin', 'member'].includes(role)) return res.status(400).json({ error: 'Invalid role' });
+
+  db.prepare('UPDATE group_members SET role=? WHERE group_id=? AND user_id=?').run(role, group.id, req.params.userId);
+  res.json({ message: 'Role updated' });
+});
+
 // GET /api/groups/:id/balances — detailed who-owes-whom
 router.get('/:id/balances', auth, (req, res) => {
   const group = getGroup(req.params.id);
@@ -171,5 +197,60 @@ function computeNetBalance(groupId, userId) {
   });
   return Math.round(net * 100) / 100;
 }
+
+// ─── CHAT ENDPOINTS ───
+
+// GET /api/groups/:id/messages
+router.get('/:id/messages', auth, (req, res) => {
+  const group = getGroup(req.params.id);
+  if (!group) return res.status(404).json({ error: 'Group not found' });
+  if (!isMember(group.id, req.userId)) return res.status(403).json({ error: 'Not a member' });
+
+  const messages = db.prepare(`
+    SELECT m.*, u.name, u.avatar 
+    FROM messages m 
+    JOIN users u ON u.id = m.user_id 
+    WHERE m.group_id=? 
+    ORDER BY m.created_at ASC
+  `).all(group.id);
+
+  res.json(messages);
+});
+
+// POST /api/groups/:id/messages
+router.post('/:id/messages', auth, (req, res) => {
+  const group = getGroup(req.params.id);
+  if (!group) return res.status(404).json({ error: 'Group not found' });
+  if (!isMember(group.id, req.userId)) return res.status(403).json({ error: 'Not a member' });
+
+  const { text, attachment_url, expense_id } = req.body;
+  if (!text && !attachment_url) return res.status(400).json({ error: 'Message must have text or attachment' });
+
+  const msgId = uuidv4();
+  db.prepare('INSERT INTO messages (id, group_id, user_id, text, attachment_url, expense_id) VALUES (?,?,?,?,?,?)')
+    .run(msgId, group.id, req.userId, text || null, attachment_url || null, expense_id || null);
+
+  const newMsg = db.prepare(`
+    SELECT m.*, u.name, u.avatar 
+    FROM messages m JOIN users u ON u.id = m.user_id 
+    WHERE m.id=?
+  `).get(msgId);
+
+  // Broadcast to group
+  req.io.to(`group_${group.id}`).emit('new_message', newMsg);
+
+  res.status(201).json(newMsg);
+});
+
+// POST /api/groups/:id/messages/attach
+router.post('/:id/messages/attach', auth, upload.single('attachment'), (req, res) => {
+  const group = getGroup(req.params.id);
+  if (!group) return res.status(404).json({ error: 'Group not found' });
+  if (!isMember(group.id, req.userId)) return res.status(403).json({ error: 'Not a member' });
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+  const attachment_url = `/uploads/${req.file.filename}`;
+  res.json({ attachment_url });
+});
 
 module.exports = router;

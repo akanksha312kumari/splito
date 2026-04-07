@@ -3,10 +3,18 @@ const router  = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const db   = require('../database');
 const auth = require('../middleware/auth');
+const multer  = require('multer');
+const path    = require('path');
+
+const storage = multer.diskStorage({
+  destination: path.join(__dirname, '../uploads'),
+  filename: (req, file, cb) => cb(null, `avatar_${uuidv4()}${path.extname(file.originalname)}`),
+});
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 // GET /api/profile
 router.get('/', auth, (req, res) => {
-  const user = db.prepare('SELECT id,name,email,avatar,xp,level,created_at FROM users WHERE id=?').get(req.userId);
+  const user = db.prepare('SELECT id,name,email,avatar,phone,xp,level,created_at FROM users WHERE id=?').get(req.userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
   const badges = db.prepare('SELECT * FROM badges WHERE user_id=? ORDER BY earned_at DESC').all(req.userId);
@@ -35,12 +43,22 @@ router.get('/', auth, (req, res) => {
   });
 });
 
-// PUT /api/profile — update name/avatar
+// PUT /api/profile — update name/phone
 router.put('/', auth, (req, res) => {
-  const { name, avatar } = req.body;
-  db.prepare('UPDATE users SET name=COALESCE(?,name), avatar=COALESCE(?,avatar) WHERE id=?')
-    .run(name, avatar, req.userId);
-  res.json(db.prepare('SELECT id,name,email,avatar,xp,level FROM users WHERE id=?').get(req.userId));
+  const { name, phone } = req.body;
+  db.prepare('UPDATE users SET name=COALESCE(?,name), phone=COALESCE(?,phone) WHERE id=?')
+    .run(name, phone, req.userId);
+  res.json(db.prepare('SELECT id,name,email,avatar,phone,xp,level FROM users WHERE id=?').get(req.userId));
+});
+
+// POST /api/profile/avatar — upload new profile photo
+router.post('/avatar', auth, upload.single('avatar'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
+  
+  const avatarUrl = `/uploads/${req.file.filename}`;
+  db.prepare('UPDATE users SET avatar=? WHERE id=?').run(avatarUrl, req.userId);
+  
+  res.json({ avatar: avatarUrl });
 });
 
 // GET /api/profile/activity — recent activity summary

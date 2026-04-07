@@ -143,7 +143,7 @@ export default function AddExpense() {
       </header>
 
       {/* Amount + description hero */}
-      <div className="card" style={{ textAlign: 'center', padding: '2.5rem 2rem', marginBottom: '1.5rem', background: 'linear-gradient(135deg, rgba(91,94,244,0.05), rgba(155,62,247,0.04))' }}>
+      <div className="card" style={{ textAlign: 'center', padding: '2.5rem 2rem', marginBottom: '1.5rem', background: 'linear-gradient(135deg, rgba(232,164,0,0.06), rgba(240,124,58,0.04))' }}>
         <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.75rem' }}>Total amount (₹)</p>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: '4px' }}>
           <span style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--primary)' }}>₹</span>
@@ -194,7 +194,7 @@ export default function AddExpense() {
                 color: category === id ? 'white' : 'var(--on-surface-muted)',
                 fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer',
                 fontFamily: 'inherit', transition: 'all var(--transition)',
-                boxShadow: category === id ? '0 4px 14px rgba(91,94,244,0.3)' : 'none',
+                boxShadow: category === id ? '0 4px 14px rgba(232,164,0,0.28)' : 'none',
                 transform: category === id ? 'scale(1.04)' : 'scale(1)',
               }}
             >
@@ -293,7 +293,7 @@ export default function AddExpense() {
               ? 'linear-gradient(135deg, var(--error), #f97316)'
               : 'linear-gradient(135deg, var(--secondary), var(--primary))',
             color: 'white',
-            boxShadow: isListening ? '0 0 0 8px rgba(239,68,68,0.15)' : '0 8px 28px rgba(155,62,247,0.4)',
+            boxShadow: isListening ? '0 0 0 8px rgba(239,68,68,0.15)' : '0 8px 28px rgba(232,164,0,0.35)',
             border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'all var(--transition)',
           }}

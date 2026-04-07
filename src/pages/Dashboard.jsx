@@ -61,7 +61,7 @@ export default function Dashboard() {
         ) : sumError ? (
           <ErrorState message={sumError} onRetry={refetchSum} />
         ) : (
-          <div style={{ borderRadius: 'var(--radius-xl)', padding: '2rem', background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)', color: 'white', boxShadow: '0 12px 40px rgba(91,94,244,0.4)', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ borderRadius: 'var(--radius-xl)', padding: '2rem', background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)', color: 'white', boxShadow: '0 12px 40px rgba(232,164,0,0.35)', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
             <p style={{ fontSize: '0.875rem', opacity: 0.8, marginBottom: '0.5rem' }}>Total you're owed</p>
             <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 3.5rem)', color: 'white', marginBottom: '2rem' }}>

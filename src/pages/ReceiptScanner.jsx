@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Camera, Sparkles, Zap, Upload, CheckCircle2, RefreshCw, Trash2 } from 'lucide-react';
 import { api } from '../api/client';
@@ -35,10 +35,76 @@ export default function ReceiptScanner() {
   const [groupId,   setGroupId]   = useState('');
   const [editItems, setEditItems] = useState([]);
   const [preview,   setPreview]   = useState(null);  // ObjectURL preview of uploaded image
+  
+  // Camera specific state
+  const videoRef   = useRef(null);
+  const canvasRef  = useRef(null);
+  const [stream, setStream] = useState(null);
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+      setStream(mediaStream);
+    } catch (err) {
+      toast.error('Camera access denied or unavailable.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+  };
+
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [stream]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+    // eslint-disable-next-line
+  }, [stream]);
+
+  // Start camera on mount
+  useEffect(() => {
+    if (!preview && !result && !scanning && !stream) {
+      startCamera();
+    }
+    // eslint-disable-next-line
+  }, [preview, result, scanning]);
+
+  const capturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    stopCamera(); // Freeze frame
+    
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
+        setPreview(URL.createObjectURL(file));
+        handleFile(file);
+      }
+    }, 'image/jpeg', 0.9);
+  };
 
   /* ─── Scan real file ─── */
   const handleFile = async (file) => {
     if (!file) return;
+    stopCamera();
     setPreview(URL.createObjectURL(file));
     setScanning(true);
     setResult(null);
@@ -62,6 +128,7 @@ export default function ReceiptScanner() {
 
   /* ─── Demo scan (no file) ─── */
   const runDemoScan = async () => {
+    stopCamera();
     if (fileRef.current) fileRef.current.value = '';
     setPreview(null);
     setScanning(true);
@@ -112,6 +179,7 @@ export default function ReceiptScanner() {
     setPreview(null);
     setEditItems([]);
     if (fileRef.current) fileRef.current.value = '';
+    startCamera();
   };
 
   /* ─── RENDER ─── */
@@ -124,14 +192,22 @@ export default function ReceiptScanner() {
         {/* Background */}
         {preview ? (
           <img src={preview} alt="Receipt" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55 }} />
+        ) : stream ? (
+          <video 
+            ref={videoRef} 
+            autoPlay 
+            playsInline 
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+          />
         ) : (
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 55%, #0f3460 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', opacity: 0.45 }}>
               <Camera size={64} color="white" />
-              <p style={{ color: 'white', fontSize: '0.9rem' }}>Upload or use demo scan</p>
+              <p style={{ color: 'white', fontSize: '0.9rem' }}>Upload or camera unavailable</p>
             </div>
           </div>
         )}
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
 
         {/* Header bar */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10, background: 'linear-gradient(to bottom, rgba(0,0,0,0.65), transparent)' }}>
@@ -142,7 +218,7 @@ export default function ReceiptScanner() {
             <X size={20} />
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(91,94,244,0.85)', backdropFilter: 'blur(10px)', borderRadius: 999, padding: '6px 14px', color: 'white', fontSize: '0.8125rem', fontWeight: 700 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(232,164,0,0.88)', backdropFilter: 'blur(10px)', borderRadius: 999, padding: '6px 14px', color: 'white', fontSize: '0.8125rem', fontWeight: 700 }}>
             <Sparkles size={14} /> AI Auto-Scan
           </div>
 
@@ -167,7 +243,7 @@ export default function ReceiptScanner() {
                 <div key={i} style={{ position: 'absolute', width: 28, height: 28, ...Object.fromEntries(Object.entries(s).map(([k, v]) => [k, typeof v === 'number' && k.startsWith('border') && !k.startsWith('border-') ? undefined : v])), borderColor: 'white', borderStyle: 'solid', borderWidth: 0, ...Object.fromEntries(Object.entries(s).filter(([k]) => k.startsWith('border')).map(([k, v]) => [k + 'Width', v])) }} />
               ))}
               {/* Scan line */}
-              <div style={{ position: 'absolute', left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, transparent, var(--primary), var(--secondary), transparent)', boxShadow: '0 0 12px rgba(91,94,244,0.9)', animation: 'scanLine 2.4s ease-in-out infinite', top: '40%' }} />
+              <div style={{ position: 'absolute', left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, transparent, var(--primary), var(--secondary), transparent)', boxShadow: '0 0 12px rgba(232,164,0,0.9)', animation: 'scanLine 2.4s ease-in-out infinite', top: '40%' }} />
             </div>
           </div>
         )}
@@ -287,21 +363,29 @@ export default function ReceiptScanner() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button
-                id="upload-receipt-btn"
                 className="btn btn-secondary"
                 style={{ flex: 1 }}
                 onClick={() => fileRef.current?.click()}
               >
-                <Upload size={16} /> Upload Photo
+                <Upload size={16} /> Gallery
               </button>
-              <button
-                id="take-photo-btn"
-                className="btn btn-primary"
-                style={{ flex: 2 }}
-                onClick={() => fileRef.current?.click()}
-              >
-                <Camera size={16} /> Take / Choose Photo
-              </button>
+              {stream ? (
+                <button
+                  className="btn btn-primary"
+                  style={{ flex: 2, background: 'var(--primary)', color: 'white' }}
+                  onClick={capturePhoto}
+                >
+                  <Camera size={16} /> Capture Receipt
+                </button>
+              ) : (
+                <button
+                  className="btn btn-primary"
+                  style={{ flex: 2 }}
+                  onClick={startCamera}
+                >
+                  <Camera size={16} /> Enable Camera
+                </button>
+              )}
             </div>
 
             {/* Demo mode */}
@@ -312,7 +396,7 @@ export default function ReceiptScanner() {
               <button
                 id="demo-scan-btn"
                 className="btn btn-secondary"
-                style={{ width: '100%', borderStyle: 'dashed', borderWidth: '1.5px', borderColor: 'var(--primary)', color: 'var(--primary)', background: 'rgba(91,94,244,0.04)' }}
+                style={{ width: '100%', borderStyle: 'dashed', borderWidth: '1.5px', borderColor: 'var(--primary)', color: 'var(--primary)', background: 'rgba(232,164,0,0.06)' }}
                 onClick={runDemoScan}
               >
                 <Sparkles size={16} /> Run Demo AI Scan

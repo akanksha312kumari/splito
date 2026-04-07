@@ -33,16 +33,25 @@ export default function Auth() {
   return (
     <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: 'auto 1fr' }}>
       {/* Hero panel */}
-      <div className="auth-hero" style={{ display: 'none', width: 420, background: 'linear-gradient(150deg, #0f0c29 0%, #302b63 60%, #24243e 100%)', padding: '3rem', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
+      <div className="auth-hero" style={{ display: 'none', width: 420, background: 'linear-gradient(150deg, #fffbea 0%, #fff3b0 50%, #ffe08a 100%)', padding: '3rem', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', overflow: 'hidden', borderRight: '1.5px solid rgba(232,164,0,0.18)' }}>
         <style>{`@media(min-width:768px){.auth-hero{display:flex !important;}}`}</style>
-        <div style={{ position: 'absolute', bottom: -100, right: -80, width: 350, height: 350, borderRadius: '50%', background: 'radial-gradient(circle, rgba(155,62,247,0.25) 0%, transparent 70%)' }} />
+        <div style={{ position: 'absolute', bottom: -100, right: -80, width: 350, height: 350, borderRadius: '50%', background: 'radial-gradient(circle, rgba(240,124,58,0.2) 0%, transparent 70%)' }} />
+        <div style={{ position: 'absolute', top: -60, left: -60, width: 250, height: 250, borderRadius: '50%', background: 'radial-gradient(circle, rgba(232,164,0,0.18) 0%, transparent 70%)' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,var(--primary),var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 900, fontSize: '1.25rem' }}>S</div>
-          <span style={{ color: 'white', fontWeight: 800, fontSize: '1.375rem' }}>Splito</span>
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#e8a400,#f07c3a)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 4px 16px rgba(232,164,0,0.35)' }}>
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <circle cx="14" cy="14" r="11" fill="white" fillOpacity="0.9"/>
+              <path d="M10 16 Q14 20 18 16" stroke="#e8a400" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+              <circle cx="11" cy="12.5" r="1.2" fill="#e8a400"/>
+              <circle cx="17" cy="12.5" r="1.2" fill="#e8a400"/>
+              <line x1="14" y1="4" x2="14" y2="24" stroke="#f07c3a" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="2 2"/>
+            </svg>
+          </div>
+          <span style={{ color: '#2d2400', fontWeight: 900, fontSize: '1.375rem', fontFamily: "'Nunito', sans-serif", background: 'linear-gradient(135deg, #e8a400, #f07c3a)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Splito</span>
         </div>
         <div>
-          <h2 style={{ color: 'white', fontSize: '2rem', marginBottom: '1rem', fontWeight: 800 }}>The smartest way to split expenses.</h2>
-          <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7 }}>AI-powered insights, predictive alerts, and beautiful analytics — all in one place.</p>
+          <h2 style={{ color: '#2d2400', fontSize: '2rem', marginBottom: '1rem', fontWeight: 800 }}>The smartest way to split expenses.</h2>
+          <p style={{ color: '#7a6a2a', lineHeight: 1.7, fontWeight: 500 }}>AI-powered insights, predictive alerts, and beautiful analytics — all in one place.</p>
         </div>
       </div>
 

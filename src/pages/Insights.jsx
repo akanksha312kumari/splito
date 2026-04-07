@@ -7,7 +7,7 @@ import EmptyState from '../components/EmptyState';
 const PERIODS = ['week', 'month', 'year'];
 const PERIOD_LABELS = { week: 'Week', month: 'Month', year: 'Year' };
 
-const SLICE_COLORS = ['#5b5ef4', '#9b3ef7', '#0ea66b', '#f59e0b', '#ef4444', '#06b6d4', '#f97316'];
+const SLICE_COLORS = ['#e8a400', '#f07c3a', '#2daa6e', '#f59e0b', '#ef4444', '#06b6d4', '#f97316'];
 
 export default function Insights() {
   const [period, setPeriod] = useState('week');
