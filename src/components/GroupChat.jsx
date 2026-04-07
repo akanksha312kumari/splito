@@ -15,6 +15,8 @@ export default function GroupChat({ groupId }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [typingUser, setTypingUser] = useState(null);
+  const typingTimerRef = useRef(null);
   const fileRef = useRef(null);
   const bottomRef = useRef(null);
 
@@ -34,47 +36,64 @@ export default function GroupChat({ groupId }) {
     socket.emit('join_group', groupId);
 
     const handleNewMessage = (msg) => {
-      // Avoid duplicates if we sent it and already optimistically added it
       setMessages(prev => {
         if (prev.find(m => m.id === msg.id)) return prev;
         return [...prev, msg];
       });
+      setTypingUser(null); // Clear typing when message arrives
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     };
 
+    const handleTyping = ({ userName }) => {
+      setTypingUser(userName);
+    };
+
+    const handleStopTyping = () => {
+      setTypingUser(null);
+    };
+
     socket.on('new_message', handleNewMessage);
+    socket.on('user_typing', handleTyping);
+    socket.on('user_stop_typing', handleStopTyping);
 
     return () => {
       socket.off('new_message', handleNewMessage);
+      socket.off('user_typing', handleTyping);
+      socket.off('user_stop_typing', handleStopTyping);
       socket.emit('leave_group', groupId);
     };
   }, [socket, groupId]);
 
   const handleSend = async () => {
     if (!text.trim()) return;
-    const optimisticMsg = {
-      id: `temp-${Date.now()}`,
-      group_id: groupId,
-      user_id: user.id,
-      name: user.name,
-      avatar: user.avatar || null,
-      text: text.trim(),
-      attachment_url: null,
-      created_at: new Date().toISOString(),
-    };
     
+    const messageText = text.trim();
     setText('');
-    setMessages(prev => [...prev, optimisticMsg]);
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    
+    // Stop typing immediately on send
+    if (socket) socket.emit('stop_typing', { groupId });
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
 
     try {
-      await api.post(`/groups/${groupId}/messages`, { text: optimisticMsg.text });
-      // We rely on socket 'new_message' to replace or just refetch, but typically socket is enough.
-      // We should ideally replace optimistic msg when actual comes via socket.
+      // Just post it, the server broadcasts 'new_message' instantly
+      await api.post(`/groups/${groupId}/messages`, { text: messageText });
     } catch (err) {
       toast.error('Failed to send message');
-      setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
     }
+  };
+
+  const onInputChange = (val) => {
+    setText(val);
+    if (!socket) return;
+
+    // Emit typing event
+    socket.emit('typing', { groupId, userName: user.name });
+
+    // Stop after 3 seconds of no activity
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    typingTimerRef.current = setTimeout(() => {
+      socket.emit('stop_typing', { groupId });
+    }, 3000);
   };
 
   const handleFileUpload = async (file) => {
@@ -154,8 +173,29 @@ export default function GroupChat({ groupId }) {
               </div>
            </div>
         )}
+         {typingUser && (
+           <div style={{ display: 'flex', gap: '0.75rem', alignSelf: 'flex-start', maxWidth: '85%' }}>
+              <div className="avatar avatar-sm" style={{ flexShrink: 0, background: 'var(--surface-low)' }}><Bot size={14} /></div>
+              <div style={{ background: 'var(--surface-low)', padding: '0.5rem 1rem', borderRadius: '16px 16px 16px 4px', fontSize: '0.8125rem' }}>
+                <span style={{ fontWeight: 600 }}>{typingUser}</span> is typing<span className="typing-dots"><span>.</span><span>.</span><span>.</span></span>
+              </div>
+           </div>
+         )}
         <div ref={bottomRef} />
       </div>
+
+      <style>{`
+        .typing-dots span {
+          animation: blink 1.4s infinite both;
+        }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink {
+          0% { opacity: 0.2; }
+          20% { opacity: 1; }
+          100% { opacity: 0.2; }
+        }
+      `}</style>
 
       {/* Input Area */}
       <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid var(--surface-mid)', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--surface)' }}>
@@ -181,7 +221,7 @@ export default function GroupChat({ groupId }) {
           className="input"
           placeholder="Type a message..."
           value={text}
-          onChange={e => setText(e.target.value)}
+          onChange={e => onInputChange(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSend()}
           style={{ flex: 1, height: '40px', borderRadius: '20px', paddingLeft: '1rem', border: '1px solid var(--surface-mid)', background: 'var(--surface-high)' }}
         />

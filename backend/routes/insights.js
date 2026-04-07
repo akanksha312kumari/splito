@@ -5,23 +5,53 @@ const auth = require('../middleware/auth');
 
 // GET /api/insights/summary — overall balance totals
 router.get('/summary', auth, (req, res) => {
-  // Total owed to me
-  const owedToMe = db.prepare(`
-    SELECT COALESCE(SUM(es.amount), 0) AS total
+  // We need to compute total precise balances globally using the same mechanism as group balances.
+  // 1. Get all expenses
+  const splits = db.prepare(`
+    SELECT es.amount, e.paid_by, es.user_id, e.group_id
     FROM expense_splits es
     JOIN expenses e ON e.id = es.expense_id
     JOIN group_members gm ON gm.group_id = e.group_id AND gm.user_id = ?
-    WHERE e.paid_by = ? AND es.user_id != ? AND es.is_settled = 0
-  `).get(req.userId, req.userId, req.userId).total;
+  `).all(req.userId);
 
-  // Total I owe
-  const iOwe = db.prepare(`
-    SELECT COALESCE(SUM(es.amount), 0) AS total
-    FROM expense_splits es
-    JOIN expenses e ON e.id = es.expense_id
-    JOIN group_members gm ON gm.group_id = e.group_id AND gm.user_id = ?
-    WHERE es.user_id = ? AND e.paid_by != ? AND es.is_settled = 0
-  `).get(req.userId, req.userId, req.userId).total;
+  // 2. Get all settlements
+  const settlements = db.prepare(`
+    SELECT s.amount, s.from_user, s.to_user, s.group_id
+    FROM settlements s
+    JOIN group_members gm ON gm.group_id = s.group_id AND gm.user_id = ?
+    WHERE s.is_paid = 1
+  `).all(req.userId);
+
+  // Calculate pairwise balances: balances[groupId][userId] = net amount the other user owes 'me' inside that group
+  // Actually, we can just compute pairwise balances globally.
+  // pair_balances[other_user_id] = net balance
+  const pairBalances = {};
+
+  splits.forEach(s => {
+    if (s.paid_by === req.userId && s.user_id !== req.userId) {
+      pairBalances[s.user_id] = (pairBalances[s.user_id] || 0) + s.amount;
+    }
+    if (s.user_id === req.userId && s.paid_by !== req.userId) {
+      pairBalances[s.paid_by] = (pairBalances[s.paid_by] || 0) - s.amount;
+    }
+  });
+
+  settlements.forEach(s => {
+    if (s.to_user === req.userId && s.from_user !== req.userId) {
+      pairBalances[s.from_user] = (pairBalances[s.from_user] || 0) - s.amount;
+    }
+    if (s.from_user === req.userId && s.to_user !== req.userId) {
+      pairBalances[s.to_user] = (pairBalances[s.to_user] || 0) + s.amount;
+    }
+  });
+
+  let owedToMe = 0;
+  let iOwe = 0;
+
+  for (const amount of Object.values(pairBalances)) {
+    if (amount > 0.01) owedToMe += amount;
+    if (amount < -0.01) iOwe += Math.abs(amount);
+  }
 
   // Total spent this month
   const now = new Date();

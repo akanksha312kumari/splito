@@ -60,8 +60,12 @@ io.on('connection', (socket) => {
     socket.join(`group_${groupId}`);
   });
 
-  socket.on('leave_group', (groupId) => {
-    socket.leave(`group_${groupId}`);
+  socket.on('typing', ({ groupId, userName }) => {
+    socket.to(`group_${groupId}`).emit('user_typing', { userName });
+  });
+
+  socket.on('stop_typing', ({ groupId }) => {
+    socket.to(`group_${groupId}`).emit('user_stop_typing');
   });
 
   socket.on('disconnect', () => {

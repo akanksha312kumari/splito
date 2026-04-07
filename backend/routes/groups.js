@@ -117,8 +117,31 @@ router.post('/:id/members', auth, (req, res) => {
 router.delete('/:id/members/:userId', auth, (req, res) => {
   const group = getGroup(req.params.id);
   if (!group) return res.status(404).json({ error: 'Group not found' });
-  if (group.created_by !== req.userId && req.params.userId !== req.userId)
-    return res.status(403).json({ error: 'Forbidden' });
+  
+  const currentUserRole = db.prepare('SELECT role FROM group_members WHERE group_id=? AND user_id=?').get(group.id, req.userId)?.role;
+  const targetUserRole  = db.prepare('SELECT role FROM group_members WHERE group_id=? AND user_id=?').get(group.id, req.params.userId)?.role;
+
+  // 1. Group creator cannot be removed by anyone (including themselves)
+  if (req.params.userId === group.created_by) {
+    return res.status(403).json({ error: 'Group creator cannot be removed' });
+  }
+
+  // 2. Permission check:
+  // - You can always remove yourself (unless you're the creator, handled above)
+  // - Group creator can remove anyone
+  // - Admins can remove core members
+  const isSelf = req.params.userId === req.userId;
+  const isCreator = group.created_by === req.userId;
+  const isAdmin = currentUserRole === 'admin';
+
+  if (!isSelf && !isCreator && !isAdmin) {
+    return res.status(403).json({ error: 'Permission denied' });
+  }
+
+  // 3. Safety: Admins cannot remove other Admins (only creator can)
+  if (isAdmin && !isCreator && targetUserRole === 'admin' && !isSelf) {
+    return res.status(403).json({ error: 'Admins cannot remove other admins' });
+  }
 
   db.prepare('DELETE FROM group_members WHERE group_id=? AND user_id=?').run(group.id, req.params.userId);
   res.json({ message: 'Member removed' });
@@ -133,6 +156,11 @@ router.put('/:id/members/:userId/role', auth, (req, res) => {
   const currentUserRole = db.prepare('SELECT role FROM group_members WHERE group_id=? AND user_id=?').get(group.id, req.userId)?.role;
   if (group.created_by !== req.userId && currentUserRole !== 'admin') {
     return res.status(403).json({ error: 'Only admins can change roles' });
+  }
+
+  // Creator role is permanent
+  if (req.params.userId === group.created_by) {
+    return res.status(403).json({ error: 'Group creator role cannot be changed' });
   }
 
   const { role } = req.body;
@@ -154,7 +182,8 @@ router.get('/:id/balances', auth, (req, res) => {
 
   const expenses = db.prepare('SELECT * FROM expenses WHERE group_id=?').all(group.id);
   expenses.forEach(exp => {
-    const splits = db.prepare('SELECT * FROM expense_splits WHERE expense_id=? AND is_settled=0').all(exp.id);
+    // Look at all splits, ignore is_settled state.
+    const splits = db.prepare('SELECT * FROM expense_splits WHERE expense_id=?').all(exp.id);
     splits.forEach(s => {
       if (s.user_id !== exp.paid_by) {
         balances[exp.paid_by] = (balances[exp.paid_by] || 0) + s.amount;
@@ -182,12 +211,12 @@ router.get('/:id/balances', auth, (req, res) => {
 });
 
 function computeNetBalance(groupId, userId) {
-  // Positive = you are owed, Negative = you owe
+  // Positive = you are owed, Negative = you owe. Ignore is_settled.
   const splits = db.prepare(`
-    SELECT es.amount, e.paid_by, es.user_id, es.is_settled
+    SELECT es.amount, e.paid_by, es.user_id
     FROM expense_splits es
     JOIN expenses e ON e.id = es.expense_id
-    WHERE e.group_id = ? AND es.is_settled = 0
+    WHERE e.group_id = ?
   `).all(groupId);
 
   let net = 0;
@@ -195,6 +224,14 @@ function computeNetBalance(groupId, userId) {
     if (s.paid_by === userId && s.user_id !== userId) net += s.amount;
     if (s.user_id === userId && s.paid_by !== userId) net -= s.amount;
   });
+
+  // Subtract paid settlements
+  const settlements = db.prepare('SELECT * FROM settlements WHERE group_id=? AND is_paid=1 AND (from_user=? OR to_user=?)').all(groupId, userId, userId);
+  settlements.forEach(s => {
+    if (s.from_user === userId) net += s.amount; // i paid someone, my net balance goes up
+    if (s.to_user === userId) net -= s.amount;   // i received money, my net balance goes down
+  });
+
   return Math.round(net * 100) / 100;
 }
 
