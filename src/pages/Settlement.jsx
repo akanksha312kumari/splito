@@ -133,7 +133,7 @@ export default function Settlement() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '1.25rem' }}>
             {targetSuggestion.from_user === user?.id ? (
               <button 
                 className="btn btn-primary" 
@@ -141,7 +141,7 @@ export default function Settlement() {
                 onClick={() => setModalConfig({ type: 'createAndPay', data: targetSuggestion, amount: targetSuggestion.amount, payee: targetSuggestion.to_name })} 
                 disabled={paying === 'new-paid'}
               >
-                {paying === 'new-paid' ? 'Processing...' : 'Pay Now'}
+                {paying === 'new-paid' ? 'Processing...' : 'Quick Settle All'}
               </button>
             ) : (
               <button 
@@ -154,9 +154,60 @@ export default function Settlement() {
               </button>
             )}
           </div>
-          <p style={{ textAlign: 'center', opacity: 0.7, fontSize: '0.8125rem', marginBottom: '0.5rem' }}>
+          <p style={{ textAlign: 'center', opacity: 0.7, fontSize: '0.8125rem' }}>
             This clears {suggestions.length} balance{suggestions.length !== 1 ? 's' : ''} in the group optimally.
           </p>
+        </div>
+      )}
+
+      {/* Manual Settle Options */}
+      {!sugLoading && suggestions?.filter(s => s.from_user === user?.id).length > 0 && (
+        <div style={{ marginBottom: '2.5rem' }}>
+          <div className="section-header">
+            <h3>Manual Settle</h3>
+            <p className="text-muted" style={{ fontSize: '0.8125rem' }}>Enter any amount to pay</p>
+          </div>
+          <div className="card">
+            {suggestions.filter(s => s.from_user === user?.id).map((s, idx) => (
+              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 0', borderBottom: idx < suggestions.length - 1 ? '1px solid var(--surface-low)' : 'none' }}>
+                <div className="avatar avatar-md" style={{ background: `hsl(${(s.to_name?.charCodeAt(0) || 0) * 37 % 360}, 65%, 50%)` }}>
+                  {s.to_name?.[0]}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontWeight: 600, fontSize: '0.9375rem' }}>Pay {s.to_name}</p>
+                  <p className="text-muted" style={{ fontSize: '0.8125rem' }}>Total debt: ₹{s.amount.toLocaleString('en-IN')}</p>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--on-surface-muted)', fontWeight: 600 }}>₹</span>
+                    <input 
+                      type="number" 
+                      defaultValue={s.amount}
+                      id={`amount-${s.to_user}`}
+                      style={{ width: 90, padding: '0.5rem 0.5rem 0.5rem 1.75rem', fontSize: '0.9375rem', fontWeight: 700, borderRadius: 'var(--radius-md)', border: '1.5px solid var(--surface-mid)', background: 'var(--surface-low)' }}
+                    />
+                  </div>
+                  <button 
+                    className="btn btn-primary btn-sm"
+                    onClick={() => {
+                      const input = document.getElementById(`amount-${s.to_user}`);
+                      const amt = parseFloat(input.value);
+                      if (amt > 0) {
+                        setModalConfig({ 
+                          type: 'createAndPay', 
+                          data: { ...s, amount: amt }, 
+                          amount: amt, 
+                          payee: s.to_name 
+                        });
+                      }
+                    }}
+                  >
+                    Settle
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

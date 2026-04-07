@@ -100,6 +100,7 @@ db.exec(`
 
 // Apply migrations for existing db silently
 try { db.exec(`ALTER TABLE users ADD COLUMN phone TEXT DEFAULT NULL;`); } catch(e) {}
+try { db.exec(`ALTER TABLE expense_splits ADD COLUMN settled_amount REAL DEFAULT 0;`); } catch(e) {}
 
 // ─── INDEXES ──────────────────────────────────────────────────────────────────
 db.exec(`

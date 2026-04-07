@@ -68,20 +68,30 @@ router.put('/:id/pay', auth, (req, res) => {
 
   db.prepare("UPDATE settlements SET is_paid=1, paid_at=datetime('now') WHERE id=?").run(s.id);
 
-  // Mark expense splits as settled
+  // New Partial Settlement Logic:
+  // Mark expense splits as settled sequentially based on amount paid
   const splits = db.prepare(`
     SELECT es.* FROM expense_splits es
     JOIN expenses e ON e.id = es.expense_id
     WHERE e.group_id=? AND es.user_id=? AND e.paid_by=? AND es.is_settled=0
+    ORDER BY e.created_at ASC
   `).all(s.group_id, s.from_user, s.to_user);
 
-  let remaining = s.amount;
-  splits.every(sp => {
-    if (remaining <= 0) return false;
-    db.prepare('UPDATE expense_splits SET is_settled=1 WHERE id=?').run(sp.id);
-    remaining -= sp.amount;
-    return true;
-  });
+  let remainingToApply = s.amount;
+  for (const sp of splits) {
+    if (remainingToApply <= 0) break;
+
+    const currentDebt = sp.amount - (sp.settled_amount || 0);
+    const applyToThisSplit = Math.min(remainingToApply, currentDebt);
+    
+    const newSettledAmount = (sp.settled_amount || 0) + applyToThisSplit;
+    const isNowFullySettled = newSettledAmount >= sp.amount - 0.01 ? 1 : 0;
+
+    db.prepare('UPDATE expense_splits SET settled_amount=?, is_settled=? WHERE id=?')
+      .run(newSettledAmount, isNowFullySettled, sp.id);
+
+    remainingToApply -= applyToThisSplit;
+  }
 
   // Notify the recipient
   const me = db.prepare('SELECT name FROM users WHERE id=?').get(req.userId);
@@ -114,15 +124,15 @@ router.get('/suggestions', auth, (req, res) => {
   members.forEach(m => { balances[m] = 0; });
 
   const splits = db.prepare(`
-    SELECT es.amount, e.paid_by, es.user_id
+    SELECT (es.amount - COALESCE(es.settled_amount, 0)) AS remaining_amount, e.paid_by, es.user_id
     FROM expense_splits es JOIN expenses e ON e.id = es.expense_id
     WHERE e.group_id = ? AND es.is_settled = 0
   `).all(group_id);
 
   splits.forEach(s => {
     if (s.paid_by !== s.user_id) {
-      balances[s.paid_by] = (balances[s.paid_by] || 0) + s.amount;
-      balances[s.user_id] = (balances[s.user_id] || 0) - s.amount;
+      balances[s.paid_by] = (balances[s.paid_by] || 0) + s.remaining_amount;
+      balances[s.user_id] = (balances[s.user_id] || 0) - s.remaining_amount;
     }
   });
 

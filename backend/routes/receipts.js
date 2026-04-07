@@ -21,6 +21,7 @@ router.post('/scan', auth, upload.single('receipt'), async (req, res) => {
 
   let parsedItems = [];
   let total = 0;
+  let allNumbers = [];
 
   if (req.file) {
     try {
@@ -28,35 +29,81 @@ router.post('/scan', auth, upload.single('receipt'), async (req, res) => {
       const result = await Tesseract.recognize(filepath, 'eng');
       const text = result.data.text;
       
+      console.log('--- OCR RAW START ---');
+      console.log(text);
+      console.log('--- OCR RAW END ---');
+
       const lines = text.split('\n');
       for (let l of lines) {
-        l = l.trim();
-        // Naively match trailing prices: "Some Item Name   120.00"
-        const match = l.match(/(.+?)\s+(?:Rs\.?|₹|\$)?\s*(\d+[\.,]\d{2})$/i);
+        l = l.trim().replace(/[|\[\]{}()]/g, ''); // Clean noise
+        if (!l) continue;
+
+        // Scavenge all numbers for fallback total detection
+        // Matches prices like 120.50, 450, 1,200.00
+        const foundNums = l.match(/\d+[.,]\d{2}/g) || l.match(/\d+/g);
+        if (foundNums) {
+          foundNums.forEach(n => {
+            const val = parseFloat(n.replace(',', '.'));
+            if (!isNaN(val)) allNumbers.push(val);
+          });
+        }
+
+        // Smart match: "Any Item Name   450" or "Any Item Name Rs 450.00"
+        const match = l.match(/(.+?)\s+(?:Rs\.?|₹|\$|INR)?\s*(\d+(?:[\.,]\d{1,2})?)\s*$/i);
+        
         if (match) {
           const name = match[1].trim();
           const amt = parseFloat(match[2].replace(',', '.'));
           
-          if (!/total|tax|subtotal|balance|change|cash/i.test(name) && name.length > 2) {
+          const isTotalLine = /total|grand|due|sum|pay|total amount|payable/i.test(name);
+          const isNoiseLine = /tax|gst|sgst|cgst|service|vat|subtotal|balance|change|cash|bill/i.test(name);
+
+          if (isTotalLine && amt > 0) {
+            total = amt; // Explicit total found
+          } else if (!isNoiseLine && !isTotalLine && name.length > 2 && amt > 0) {
              parsedItems.push({ name, qty: 1, unit_price: amt, amount: amt });
-             total += amt;
           }
         }
       }
+
+      // If we didn't find an explicit "total" line but found items, sum them
+      if (total === 0 && parsedItems.length > 0) {
+        total = parsedItems.reduce((s, it) => s + it.amount, 0);
+      }
+
+      // Deep Scavenger: If still 0, use the largest logical number found in the receipt
+      if (total === 0 && allNumbers.length > 0) {
+        // Filter out obviously wrong numbers (e.g. years like 2024, or tiny amounts)
+        const logicalTotals = allNumbers.filter(n => n > 10 && n < 50000); 
+        if (logicalTotals.length > 0) {
+          total = Math.max(...logicalTotals);
+          if (parsedItems.length === 0) {
+            parsedItems.push({ name: 'Detected Total', qty: 1, unit_price: total, amount: total });
+          }
+        }
+      }
+
     } catch (e) {
       console.error('OCR Error:', e);
     }
   }
 
-  // Fallback if OCR fails or no recognizable lines were found
-  if (parsedItems.length === 0) {
-    parsedItems = [
-      { name: 'OCR Unreadable Item', qty: 1, unit_price: 150, amount: 150 },
-    ];
-    total = 150;
+  // Fallback if OCR resulted in 0 (No more hardcoded 150)
+  if (total === 0) {
+    parsedItems = [{ name: 'Manual Entry Required', qty: 1, unit_price: 0, amount: 0 }];
+    total = 0;
   }
 
-  // Get group member count for split suggestion
+  // Smart Category Guessing
+  const fullText = (parsedItems.map(i => i.name).join(' ') + (req.file ? ' ' + filename : '')).toLowerCase();
+  let suggested_category = 'other';
+  if (/pizza|burger|naan|tikka|food|coke|drink|cafe|restaurant|dine|eat|meal/i.test(fullText)) suggested_category = 'food';
+  else if (/taxi|uber|ola|cab|auto|fare|bus|petrol|fuel|gas|train|trip/i.test(fullText)) suggested_category = 'travel';
+  else if (/hotel|stay|room|lodge|hostel|airbnb/i.test(fullText)) suggested_category = 'accommodation';
+  else if (/movie|ticket|show|fun|entry|game|play|zoo/i.test(fullText)) suggested_category = 'fun';
+  else if (/shop|store|mall|buy|purchase/i.test(fullText)) suggested_category = 'shopping';
+
+  // Group Member Split Calculation
   let splitAmount = total;
   let memberCount = 1;
   if (group_id) {
@@ -75,8 +122,8 @@ router.post('/scan', auth, upload.single('receipt'), async (req, res) => {
     total,
     member_count:  memberCount,
     per_person:    splitAmount,
-    ai_confidence: req.file ? 82 : 0,
-    suggested_category: 'shopping',
+    ai_confidence: total > 0 ? (parsedItems.length > 1 ? 92 : 75) : 10,
+    suggested_category,
   });
 });
 
