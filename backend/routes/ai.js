@@ -3,6 +3,17 @@ const router  = express.Router();
 const db   = require('../database');
 const auth = require('../middleware/auth');
 
+// Middleware to check if user has AI enabled
+const checkAiEnabled = (req, res, next) => {
+  const settings = db.prepare('SELECT ai_enabled FROM user_settings WHERE user_id = ?').get(req.userId);
+  if (settings && settings.ai_enabled === 0) {
+    return res.status(403).json({ error: 'AI features are disabled by the user', ai_disabled: true });
+  }
+  next();
+};
+
+router.use(checkAiEnabled);
+
 // Pure logic — compute AI spending score 0–100
 function computeSpendingScore(userId) {
   const weekAgo   = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);

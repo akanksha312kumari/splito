@@ -17,8 +17,11 @@ export default function Dashboard() {
   const { data: summary, loading: sumLoading, error: sumError, refetch: refetchSum } = useApi('/insights/summary', [], 'balance_update');
   const { data: groups,  loading: grpLoading, error: grpError,  refetch: refetchGrp } = useApi('/groups', [], 'balance_update');
   const { data: expenses } = useApi('/expenses?limit=5', [], 'balance_update');
+  const { data: settings } = useApi('/settings');
   const { data: aiSug }    = useApi('/ai/suggestions', [], 'balance_update');
   const { data: scoreData } = useApi('/ai/score', [], 'balance_update');
+
+  const aiEnabled = settings?.ai_enabled !== false;
 
   // Show success toast when redirected from AddExpense
   useEffect(() => {
@@ -40,13 +43,15 @@ export default function Dashboard() {
           <h1 style={{ fontSize: '1.75rem' }}>{user?.name || 'You'} 👋</h1>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <button className="card card-clickable" onClick={() => navigate('/ai-report')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: 999 }}>
-            <Sparkles size={16} color="var(--primary)" />
-            <span style={{ fontWeight: 700, color: 'var(--primary)' }}>
-              {scoreData ? scoreData.score : <Skeleton width={24} height={16} />}
-            </span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--on-surface-muted)' }}>score</span>
-          </button>
+          {aiEnabled && (
+            <button className="card card-clickable" onClick={() => navigate('/ai-report')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', borderRadius: 999 }}>
+              <Sparkles size={16} color="var(--primary)" />
+              <span style={{ fontWeight: 700, color: 'var(--primary)' }}>
+                {scoreData ? scoreData.score : <Skeleton width={24} height={16} />}
+              </span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--on-surface-muted)' }}>score</span>
+            </button>
+          )}
           {/* Quick Add Expense Button */}
           <Link to="/add-expense" className="btn btn-primary" style={{ borderRadius: 999, padding: '0.625rem 1rem', textDecoration: 'none' }}>
             + Add Expense
@@ -88,27 +93,29 @@ export default function Dashboard() {
         )}
 
         {/* AI Insight card */}
-        <div className="ai-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div className="ai-icon-wrap"><Sparkles size={18} /></div>
-            <div>
-              <p style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--primary)' }}>Smart Insight</p>
-              <p className="text-muted" style={{ fontSize: '0.75rem' }}>AI-generated · just now</p>
+        {aiEnabled && (
+          <div className="ai-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div className="ai-icon-wrap"><Sparkles size={18} /></div>
+              <div>
+                <p style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--primary)' }}>Smart Insight</p>
+                <p className="text-muted" style={{ fontSize: '0.75rem' }}>AI-generated · just now</p>
+              </div>
             </div>
+            {aiSug === null ? (
+              <Skeleton width="90%" height={16} />
+            ) : firstSuggestion ? (
+              <>
+                <p style={{ fontSize: '0.9375rem', lineHeight: 1.6 }}>{firstSuggestion.message}</p>
+                <button className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => navigate('/insights')}>
+                  View breakdown →
+                </button>
+              </>
+            ) : (
+              <p style={{ fontSize: '0.9375rem', lineHeight: 1.6 }}>All your balances look healthy! Keep it up 🎉</p>
+            )}
           </div>
-          {aiSug === null ? (
-            <Skeleton width="90%" height={16} />
-          ) : firstSuggestion ? (
-            <>
-              <p style={{ fontSize: '0.9375rem', lineHeight: 1.6 }}>{firstSuggestion.message}</p>
-              <button className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => navigate('/insights')}>
-                View breakdown →
-              </button>
-            </>
-          ) : (
-            <p style={{ fontSize: '0.9375rem', lineHeight: 1.6 }}>All your balances look healthy! Keep it up 🎉</p>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Stats */}

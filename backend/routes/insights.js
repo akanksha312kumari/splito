@@ -167,8 +167,9 @@ router.get('/breakdown', auth, (req, res) => {
     WHERE es.user_id=? AND e.created_at>=? AND e.created_at<?
   `).get(req.userId, req.userId, prevSince, since).t;
 
+  const settings = db.prepare('SELECT ai_enabled FROM user_settings WHERE user_id=?').get(req.userId);
   let comparison = null;
-  if (prevTotal > 0) {
+  if (settings && settings.ai_enabled !== 0 && prevTotal > 0) {
     const delta = Math.round(((grand - prevTotal) / prevTotal) * 100);
     comparison = delta < 0
       ? `You spent ${Math.abs(delta)}% less than last ${period}. 🎉 Great job saving!`

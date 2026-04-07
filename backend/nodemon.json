@@ -1,0 +1,11 @@
+{
+  "ignore": [
+    "data/*",
+    "*.db",
+    "*.db-journal",
+    "*.db-shm",
+    "*.db-wal",
+    "server.log"
+  ],
+  "delay": "500"
+}

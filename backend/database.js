@@ -1,9 +1,9 @@
-// Uses Node.js 22+ built-in sqlite (no native compilation needed)
-const { DatabaseSync } = require('node:sqlite');
-const bcrypt = require('bcryptjs');
-const path   = require('path');
+// Using better-sqlite3 for maximum stability and performance
+const Database = require('better-sqlite3');
+const path     = require('path');
+const bcrypt   = require('bcryptjs');
 
-const db = new DatabaseSync(path.join(__dirname, 'splito.db'));
+const db = new Database(path.join(__dirname, 'data', 'splito.db'));
 
 // Helpers — make node:sqlite feel like better-sqlite3
 // node:sqlite already has synchronous API, same surface area

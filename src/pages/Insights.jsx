@@ -12,6 +12,9 @@ const SLICE_COLORS = ['#e8a400', '#f07c3a', '#2daa6e', '#f59e0b', '#ef4444', '#0
 export default function Insights() {
   const [period, setPeriod] = useState('week');
   const { data, loading, error, refetch } = useApi(`/insights/breakdown?period=${period}`, [period]);
+  const { data: settings } = useApi('/settings');
+
+  const aiEnabled = settings?.ai_enabled !== false;
 
   const slices   = data?.categories || [];
   const total    = slices.reduce((s, c) => s + c.amount, 0);
@@ -148,10 +151,18 @@ export default function Insights() {
           )}
 
           {/* AI comparison text */}
-          {data?.comparison && (
-            <div className="ai-card">
-              <p style={{ fontWeight: 700, color: 'var(--primary)', marginBottom: '6px' }}>📊 AI Comparison</p>
-              <p style={{ fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--on-surface)' }}>{data.comparison}</p>
+          {aiEnabled ? (
+            data?.comparison && (
+              <div className="ai-card">
+                <p style={{ fontWeight: 700, color: 'var(--primary)', marginBottom: '6px' }}>📊 AI Comparison</p>
+                <p style={{ fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--on-surface)' }}>{data.comparison}</p>
+              </div>
+            )
+          ) : (
+            <div className="ai-card" style={{ opacity: 0.7, border: '1.5px dashed var(--surface-mid)', background: 'transparent' }}>
+              <p className="text-muted" style={{ fontSize: '0.9rem', textAlign: 'center', margin: '0.5rem 0' }}>
+                💡 Enable **Smart spending insights** in your profile to see periodic comparisons and AI tips.
+              </p>
             </div>
           )}
         </>
