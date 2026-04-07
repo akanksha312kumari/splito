@@ -379,7 +379,7 @@ export default function Profile() {
       ) : (
         <>
           {/* ── User card ── */}
-          <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1.5rem', padding: '2rem', background: 'linear-gradient(135deg, rgba(232,164,0,0.07), rgba(240,124,58,0.05))' }}>
+          <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.25rem', padding: '1.5rem', background: 'linear-gradient(135deg, rgba(232,164,0,0.07), rgba(240,124,58,0.05))' }}>
             <div
               className="avatar avatar-xl"
               style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))', boxShadow: '0 8px 28px rgba(232,164,0,0.30)', flexShrink: 0, position: 'relative', cursor: 'pointer', overflow: 'hidden' }}
@@ -400,8 +400,8 @@ export default function Profile() {
             <input type="file" ref={fileRef} accept="image/*" style={{ display: 'none' }} onChange={e => handleAvatarUpload(e.target.files?.[0])} />
             
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '4px' }}>
-                <h2 style={{ fontSize: '1.375rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '2px' }}>
+                <h2 style={{ fontSize: '1.25rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {profile?.name || user?.name || 'User'}
                 </h2>
                 <button
@@ -432,9 +432,9 @@ export default function Profile() {
                 { label: 'Groups',   value: activity.groups },
                 { label: 'Settled',  value: activity.settled },
               ].map(s => (
-                <div key={s.label} className="card" style={{ textAlign: 'center', padding: '1rem' }}>
-                  <p style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>{s.value}</p>
-                  <p className="text-muted" style={{ fontSize: '0.75rem', marginTop: '2px' }}>{s.label}</p>
+                <div key={s.label} className="card" style={{ textAlign: 'center', padding: '0.75rem 0.5rem' }}>
+                  <p style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}>{s.value}</p>
+                  <p className="text-muted" style={{ fontSize: '0.6875rem', marginTop: '1px' }}>{s.label}</p>
                 </div>
               ))}
             </div>

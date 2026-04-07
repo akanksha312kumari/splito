@@ -5,20 +5,20 @@ import Skeleton, { SkeletonCard } from '../components/Skeleton';
 import ErrorState from '../components/ErrorState';
 
 export default function AIReport() {
-  const navigate  = useNavigate();
-  const { data: report,  loading: rLoading, error: rError, refetch } = useApi('/ai/report');
+  const navigate = useNavigate();
+  const { data: report, loading: rLoading, error: rError, refetch } = useApi('/ai/report');
   const { data: score } = useApi('/ai/score');
-  const { data: recs }  = useApi('/ai/suggestions');
+  const { data: recs } = useApi('/ai/suggestions');
   const { data: settings } = useApi('/settings');
 
   const aiEnabled = settings?.ai_enabled !== false;
 
-  const scoreNum  = score?.score ?? 0;
+  const scoreNum = score?.score ?? 0;
   const scorePerc = scoreNum / 100;
-  const R         = 54;
-  const circ      = 2 * Math.PI * R;
-  const dash      = scorePerc * circ;
-  const color     = scoreNum >= 80 ? 'var(--success)' : scoreNum >= 50 ? 'var(--warning)' : 'var(--error)';
+  const R = 54;
+  const circ = 2 * Math.PI * R;
+  const dash = scorePerc * circ;
+  const color = scoreNum >= 80 ? 'var(--success)' : scoreNum >= 50 ? 'var(--warning)' : 'var(--error)';
 
   return (
     <div className="page animate-fade-up">
@@ -68,7 +68,7 @@ export default function AIReport() {
             )}
             <div style={{ flex: 1, minWidth: 160 }}>
               <h2 style={{ fontSize: '1.375rem', marginBottom: 6 }}>
-                {scoreNum >= 80 ? 'Excellent Splitter! 🌟' : scoreNum >= 60 ? 'Good Progress! 👍' : 'Needs Attention 📊'}
+                {scoreNum >= 80 ? 'Excellent Splitter!' : scoreNum >= 60 ? 'Good Progress!' : 'Needs Attention!'}
               </h2>
               <p className="text-muted" style={{ lineHeight: 1.6 }}>
                 {score?.summary || 'Your AI-powered expense efficiency score based on split history and settlement speed.'}

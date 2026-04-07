@@ -45,11 +45,11 @@ export default function Notifications() {
   };
 
   const predictive = notifs?.filter(n => (n.type === 'error' || n.type === 'ai') && n.is_ai) || [];
-  const rest        = notifs?.filter(n => !n.is_ai || (n.type !== 'error' && n.type !== 'ai')) || [];
-  const hasUnread   = notifs?.some(n => !n.is_read);
+  const rest = notifs?.filter(n => !n.is_ai || (n.type !== 'error' && n.type !== 'ai')) || [];
+  const hasUnread = notifs?.some(n => !n.is_read);
 
-  const typeIcon  = { success: '✅', info: 'ℹ️', warning: '⏰', error: '🚨', ai: '🤖' };
-  const dotColor  = { success: 'var(--success)', warning: 'var(--warning)', error: 'var(--error)', ai: 'var(--primary)', info: 'var(--surface-high)' };
+  const typeIcon = { success: '✅', info: 'ℹ️', warning: '⏰', error: '🚨', ai: '🤖' };
+  const dotColor = { success: 'var(--success)', warning: 'var(--warning)', error: 'var(--error)', ai: 'var(--primary)', info: 'var(--surface-high)' };
 
   return (
     <div className="page animate-fade-up">
@@ -66,7 +66,7 @@ export default function Notifications() {
       {/* Skeleton loading */}
       {loading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {[1,2,3].map(i => (
+          {[1, 2, 3].map(i => (
             <div key={i} className="card" style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
               <Skeleton width={40} height={40} radius="50%" />
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -129,12 +129,12 @@ export default function Notifications() {
 
 function formatTime(ts) {
   if (!ts) return '';
-  const d   = new Date(ts);
+  const d = new Date(ts);
   const now = new Date();
   const diff = now - d;
-  if (diff < 60_000)      return 'Just now';
-  if (diff < 3_600_000)   return `${Math.round(diff / 60_000)}m ago`;
-  if (diff < 86_400_000)  return `${Math.round(diff / 3_600_000)}h ago`;
+  if (diff < 60_000) return 'Just now';
+  if (diff < 3_600_000) return `${Math.round(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.round(diff / 3_600_000)}h ago`;
   if (diff < 172_800_000) return 'Yesterday';
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }

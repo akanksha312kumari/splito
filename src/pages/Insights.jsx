@@ -102,11 +102,11 @@ export default function Insights() {
 
             {/* Bar trend chart */}
             <div className="card">
-              <h3 style={{ marginBottom: '1.5rem' }}>Spending Trend</h3>
+              <h3 style={{ marginBottom: '1.25rem' }}>Spending Trend</h3>
               {trend.length === 0 ? (
                 <EmptyState icon="📈" title="No trend data" subtitle="Spend across multiple days to see a trend." />
               ) : (
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: 160, paddingBottom: '1.5rem', position: 'relative' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: 140, paddingBottom: '1.25rem', position: 'relative' }}>
                   {trend.map((t, i) => {
                     const pct = maxBar > 0 ? (t.amount / maxBar) * 100 : 0;
                     const isTop = Math.max(...trend.map(x => x.amount)) === t.amount;
@@ -137,13 +137,13 @@ export default function Insights() {
 
           {/* Top categories summary row */}
           {slices.length > 0 && (
-            <div className="card" style={{ marginBottom: '2rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '1rem' }}>
+            <div className="card" style={{ marginBottom: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.75rem' }}>
                 {slices.slice(0, 4).map((s, i) => (
-                  <div key={i} style={{ textAlign: 'center', padding: '0.75rem', background: 'var(--surface-low)', borderRadius: 'var(--radius-md)' }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: SLICE_COLORS[i], margin: '0 auto 8px' }} />
-                    <p style={{ fontWeight: 700, fontSize: '1.125rem' }}>₹{(s.amount / 1000).toFixed(1)}k</p>
-                    <p className="text-muted" style={{ fontSize: '0.75rem' }}>{capitalize(s.category)}</p>
+                  <div key={i} style={{ textAlign: 'center', padding: '0.625rem', background: 'var(--surface-low)', borderRadius: 'var(--radius-md)' }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: SLICE_COLORS[i], margin: '0 auto 6px' }} />
+                    <p style={{ fontWeight: 700, fontSize: '1rem' }}>₹{(s.amount / 1000).toFixed(1)}k</p>
+                    <p className="text-muted" style={{ fontSize: '0.6875rem' }}>{capitalize(s.category)}</p>
                   </div>
                 ))}
               </div>

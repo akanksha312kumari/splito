@@ -22,7 +22,7 @@
   --on-surface-faint:   #b8a84a;
   --on-primary:         #ffffff;
 
-  --nav-width: 260px;
+  --nav-width: 230px;
   --content-max: 900px;
   --radius-sm:  0.5rem;
   --radius-md:  1rem;
@@ -59,9 +59,9 @@ body {
 }
 
 /* ─── Typography ────────────────────────────────────── */
-h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; }
-h2 { font-size: clamp(1.25rem, 3vw, 1.75rem); font-weight: 700; letter-spacing: -0.02em; }
-h3 { font-size: 1.125rem; font-weight: 600; }
+h1 { font-size: clamp(1.5rem, 3.5vw, 2rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; }
+h2 { font-size: clamp(1.125rem, 2.5vw, 1.375rem); font-weight: 700; letter-spacing: -0.02em; }
+h3 { font-size: 1rem; font-weight: 600; }
 p  { line-height: 1.6; }
 
 .text-muted  { color: var(--on-surface-muted); }
@@ -92,7 +92,7 @@ p  { line-height: 1.6; }
 .card {
   background: var(--surface-lowest);
   border-radius: var(--radius-lg);
-  padding: 1.5rem;
+  padding: 1.25rem;
   box-shadow: var(--shadow-sm);
   border: 1px solid rgba(232,164,0,0.10);
   transition: box-shadow var(--transition), transform var(--transition);
@@ -278,16 +278,16 @@ input::placeholder { color: var(--on-surface-faint); }
   color: white;
   flex-shrink: 0;
 }
-.avatar-sm  { width: 36px; height: 36px; font-size: 0.875rem; }
-.avatar-md  { width: 48px; height: 48px; font-size: 1.125rem; }
-.avatar-lg  { width: 64px; height: 64px; font-size: 1.5rem; }
-.avatar-xl  { width: 96px; height: 96px; font-size: 2.25rem; }
+.avatar-sm  { width: 32px; height: 32px; font-size: 0.8125rem; }
+.avatar-md  { width: 44px; height: 44px; font-size: 1rem; }
+.avatar-lg  { width: 56px; height: 56px; font-size: 1.25rem; }
+.avatar-xl  { width: 84px; height: 84px; font-size: 1.75rem; }
 
 /* ─── Page Wrapper (Responsive) ──────────────────────── */
 .page {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 1.25rem;
   max-width: var(--content-max);
   width: 100%;
 }
@@ -471,7 +471,7 @@ input::placeholder { color: var(--on-surface-faint); }
     padding-bottom: 0;
   }
   .page {
-    padding: 2rem 2.5rem;
+    padding: 1.5rem 2rem;
     margin: 0 auto;
   }
   .desktop-grid-2 {
@@ -498,7 +498,7 @@ input::placeholder { color: var(--on-surface-faint); }
   background: linear-gradient(135deg, rgba(232,164,0,0.07), rgba(240,124,58,0.07));
   border: 1.5px solid rgba(232,164,0,0.20);
   border-radius: var(--radius-lg);
-  padding: 1.25rem;
+  padding: 1rem;
 }
 
 .ai-icon-wrap {
@@ -518,7 +518,7 @@ input::placeholder { color: var(--on-surface-faint); }
 .stat-card {
   background: var(--surface-lowest);
   border-radius: var(--radius-lg);
-  padding: 1.5rem;
+  padding: 1.25rem;
   border: 1px solid var(--surface-mid);
 }
 

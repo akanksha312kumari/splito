@@ -226,7 +226,7 @@ function GroupsList() {
           onClick={() => navigate(`/group?id=${g.id}`)}
           style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1rem' }}
         >
-          <div style={{ fontSize: '2.25rem', width: 60, height: 60, borderRadius: 'var(--radius-md)', background: 'var(--surface-low)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ fontSize: '1.75rem', width: 48, height: 48, borderRadius: 'var(--radius-md)', background: 'var(--surface-low)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             {g.emoji}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -338,8 +338,8 @@ function GroupDetailView({ groupId }) {
       <header style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
         <button className="btn btn-ghost btn-icon" onClick={() => navigate('/group')}><ArrowLeft size={22} /></button>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h2 style={{ fontSize: '1.5rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{group.emoji} {group.name}</h2>
-          <p className="text-muted" style={{ fontSize: '0.875rem' }}>
+          <h2 style={{ fontSize: '1.375rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{group.emoji} {group.name}</h2>
+          <p className="text-muted" style={{ fontSize: '0.8125rem' }}>
             {group.member_count} members · {group.expense_count} expenses
           </p>
         </div>
@@ -438,10 +438,10 @@ function GroupDetailView({ groupId }) {
             border: `1.5px solid ${group.net_balance >= 0 ? 'rgba(232,164,0,0.2)' : 'rgba(239,68,68,0.2)'}`,
             marginBottom: '1.5rem'
           }}>
-            <p className="text-muted" style={{ fontSize: '0.8125rem', marginBottom: '4px' }}>
+            <p className="text-muted" style={{ fontSize: '0.75rem', marginBottom: '2px' }}>
               {group.net_balance >= 0 ? 'You are owed' : 'You owe'}
             </p>
-            <p style={{ fontSize: '2.25rem', fontWeight: 800, color: group.net_balance >= 0 ? 'var(--primary)' : 'var(--error)' }}>
+            <p style={{ fontSize: '1.75rem', fontWeight: 800, color: group.net_balance >= 0 ? 'var(--primary)' : 'var(--error)' }}>
               ₹{Math.abs(group.net_balance).toLocaleString('en-IN')}
             </p>
           </div>
